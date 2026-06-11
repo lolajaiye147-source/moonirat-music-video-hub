@@ -114,7 +114,14 @@ function AuthPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              {isLogin && (
+                <Link to="/reset-password" className="text-xs text-neon-purple hover:text-neon-purple/80">
+                  Forgot password?
+                </Link>
+              )}
+            </div>
             <div className="relative">
               <Input
                 id="password"
