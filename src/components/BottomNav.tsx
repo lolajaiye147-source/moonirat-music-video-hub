@@ -13,6 +13,9 @@ const navItems = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  // Hide on auth page
+  if (pathname === "/auth") return null;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t-0">
       <div className="flex items-center justify-around px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
