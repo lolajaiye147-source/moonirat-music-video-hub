@@ -1,11 +1,16 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+module.exports = {
+  content: [
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './context/**/*.{js,ts,jsx,tsx}',
+    './hooks/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
         moon: {
-          50: '#f0f0ff',
+          50:  '#f0f0ff',
           100: '#e4e3ff',
           200: '#cccbfe',
           300: '#a9a6fd',
