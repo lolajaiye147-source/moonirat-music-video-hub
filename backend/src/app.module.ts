@@ -7,6 +7,7 @@ import { ArtistsModule } from './artists/artists.module';
 import { VideosModule } from './videos/videos.module';
 import { FollowsModule } from './follows/follows.module';
 import { PlaylistsModule } from './playlists/playlists.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -19,5 +20,6 @@ import { PlaylistsModule } from './playlists/playlists.module';
     FollowsModule,
     PlaylistsModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

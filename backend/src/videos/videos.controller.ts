@@ -21,19 +21,21 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 export class VideosController {
   constructor(private videosService: VideosService) {}
 
-  @Get()
-  @ApiOperation({ summary: 'List all videos' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
-    return this.videosService.findAll(+page, +limit);
-  }
+  // ── Static / named routes first (must precede /:id) ───────────────────────
 
   @Get('trending')
   @ApiOperation({ summary: 'Get trending videos by view count' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   trending(@Query('limit') limit = 10) {
     return this.videosService.trending(+limit);
+  }
+
+  /** GET /videos/new  — spec-required alias */
+  @Get('new')
+  @ApiOperation({ summary: 'Get newest video releases (alias: /new-releases)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  newReleasesAlias(@Query('limit') limit = 10) {
+    return this.videosService.newReleases(+limit);
   }
 
   @Get('new-releases')
@@ -56,16 +58,14 @@ export class VideosController {
     return this.videosService.search(q, +page, +limit);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get video details' })
-  findOne(@Param('id') id: string) {
-    return this.videosService.findOne(id);
-  }
+  // ── Collection ────────────────────────────────────────────────────────────
 
-  @Post(':id/view')
-  @ApiOperation({ summary: 'Increment video view count' })
-  incrementViews(@Param('id') id: string) {
-    return this.videosService.incrementViews(id);
+  @Get()
+  @ApiOperation({ summary: 'List all videos' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
+    return this.videosService.findAll(+page, +limit);
   }
 
   @Post('upload-url')
@@ -85,6 +85,20 @@ export class VideosController {
   @ApiOperation({ summary: 'Create video record after S3 upload' })
   create(@CurrentUser('id') userId: string, @Body() dto: CreateVideoDto) {
     return this.videosService.create(userId, dto);
+  }
+
+  // ── Single resource (/:id last to avoid swallowing named routes) ──────────
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get video details' })
+  findOne(@Param('id') id: string) {
+    return this.videosService.findOne(id);
+  }
+
+  @Post(':id/view')
+  @ApiOperation({ summary: 'Increment video view count' })
+  incrementViews(@Param('id') id: string) {
+    return this.videosService.incrementViews(id);
   }
 
   @Patch(':id')
