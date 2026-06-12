@@ -6,5 +6,6 @@ import { S3Service } from './s3.service';
 @Module({
   controllers: [VideosController],
   providers: [VideosService, S3Service],
+  exports: [VideosService],
 })
 export class VideosModule {}

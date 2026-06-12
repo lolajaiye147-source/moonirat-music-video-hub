@@ -8,8 +8,20 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { VideosService } from './videos.service';
@@ -21,7 +33,7 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 export class VideosController {
   constructor(private videosService: VideosService) {}
 
-  // ── Static / named routes first (must precede /:id) ───────────────────────
+  // ── Named routes first (must precede /:id) ────────────────────────────────
 
   @Get('trending')
   @ApiOperation({ summary: 'Get trending videos by view count' })
@@ -30,18 +42,17 @@ export class VideosController {
     return this.videosService.trending(+limit);
   }
 
-  /** GET /videos/new  — spec-required alias */
   @Get('new')
-  @ApiOperation({ summary: 'Get newest video releases (alias: /new-releases)' })
+  @ApiOperation({ summary: 'Get newest video releases' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  newReleasesAlias(@Query('limit') limit = 10) {
+  newReleases(@Query('limit') limit = 10) {
     return this.videosService.newReleases(+limit);
   }
 
   @Get('new-releases')
-  @ApiOperation({ summary: 'Get newest video releases' })
+  @ApiOperation({ summary: 'Get newest video releases (alias: /new)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  newReleases(@Query('limit') limit = 10) {
+  newReleasesAlias(@Query('limit') limit = 10) {
     return this.videosService.newReleases(+limit);
   }
 
@@ -61,17 +72,68 @@ export class VideosController {
   // ── Collection ────────────────────────────────────────────────────────────
 
   @Get()
-  @ApiOperation({ summary: 'List all videos' })
+  @ApiOperation({ summary: 'List all videos (feed)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
     return this.videosService.findAll(+page, +limit);
   }
 
+  /**
+   * POST /videos/upload — real Multer/S3 upload (multipart/form-data)
+   * Accepts: video file (required) + thumbnail file (optional) + JSON body fields
+   */
+  @Post('upload')
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'video', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+      ],
+      { storage: memoryStorage() },
+    ),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['video', 'title'],
+      properties: {
+        video:       { type: 'string', format: 'binary', description: 'Video file (mp4, mov, etc.)' },
+        thumbnail:   { type: 'string', format: 'binary', description: 'Thumbnail image (jpg, png) — optional' },
+        title:       { type: 'string', example: 'Midnight Drive' },
+        description: { type: 'string', example: 'A cinematic night-drive video' },
+        duration:    { type: 'integer', example: 213, description: 'Duration in seconds' },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Upload video + thumbnail directly (multipart/form-data)' })
+  async uploadVideo(
+    @CurrentUser('id') userId: string,
+    @UploadedFiles() files: { video?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] },
+    @Body('title') title: string,
+    @Body('description') description?: string,
+    @Body('duration') duration?: string,
+  ) {
+    const videoFile = files?.video?.[0];
+    if (!videoFile) throw new BadRequestException('Video file is required');
+    if (!title?.trim()) throw new BadRequestException('title is required');
+
+    return this.videosService.uploadAndCreate(
+      userId,
+      videoFile,
+      files?.thumbnail?.[0],
+      { title, description, duration: duration ? parseInt(duration, 10) : undefined },
+    );
+  }
+
+  /** POST /videos/upload-url — generate presigned URL for client-side upload */
   @Post('upload-url')
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get presigned S3 URL for video/thumbnail upload' })
+  @ApiOperation({ summary: 'Get presigned S3 URL for client-side upload' })
   getUploadUrl(
     @Body('contentType') contentType: string,
     @Body('type') type: 'videos' | 'thumbnails',
@@ -79,15 +141,16 @@ export class VideosController {
     return this.videosService.getUploadUrl(contentType, type || 'videos');
   }
 
+  /** POST /videos — save metadata after client-side presigned upload */
   @Post()
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Create video record after S3 upload' })
+  @ApiOperation({ summary: 'Save video metadata (after client-side S3 upload)' })
   create(@CurrentUser('id') userId: string, @Body() dto: CreateVideoDto) {
     return this.videosService.create(userId, dto);
   }
 
-  // ── Single resource (/:id last to avoid swallowing named routes) ──────────
+  // ── Single resource (/:id last) ───────────────────────────────────────────
 
   @Get(':id')
   @ApiOperation({ summary: 'Get video details' })

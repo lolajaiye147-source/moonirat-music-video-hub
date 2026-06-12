@@ -7,6 +7,9 @@ import { ArtistsModule } from './artists/artists.module';
 import { VideosModule } from './videos/videos.module';
 import { FollowsModule } from './follows/follows.module';
 import { PlaylistsModule } from './playlists/playlists.module';
+import { FeedModule } from './feed/feed.module';
+import { SearchModule } from './search/search.module';
+import { WatchHistoryModule } from './watch-history/watch-history.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -19,6 +22,9 @@ import { HealthController } from './health/health.controller';
     VideosModule,
     FollowsModule,
     PlaylistsModule,
+    FeedModule,
+    SearchModule,
+    WatchHistoryModule,
   ],
   controllers: [HealthController],
 })

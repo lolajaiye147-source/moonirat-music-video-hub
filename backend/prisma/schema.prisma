@@ -12,6 +12,11 @@ enum Role {
   ARTIST
 }
 
+enum VideoStatus {
+  PROCESSING
+  READY
+}
+
 model User {
   id           String     @id @default(uuid())
   email        String     @unique
@@ -20,24 +25,25 @@ model User {
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
-  artist    Artist?
-  follows   Follow[]
-  playlists Playlist[]
+  artist       Artist?
+  follows      Follow[]
+  playlists    Playlist[]
+  watchHistory WatchHistory[]
 
   @@map("users")
 }
 
 model Artist {
-  id             String   @id @default(uuid())
-  userId         String   @unique @map("user_id")
-  name           String
-  bio            String?
-  profileImage   String?  @map("profile_image")
-  verified       Boolean  @default(false)
-  followersCount Int      @default(0) @map("followers_count")
+  id                      String    @id @default(uuid())
+  userId                  String    @unique @map("user_id")
+  name                    String
+  bio                     String?
+  profileImage            String?   @map("profile_image")
+  verified                Boolean   @default(false)
+  followersCount          Int       @default(0) @map("followers_count")
   verificationRequestedAt DateTime? @map("verification_requested_at")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   videos  Video[]
@@ -47,18 +53,21 @@ model Artist {
 }
 
 model Video {
-  id           String   @id @default(uuid())
-  artistId     String   @map("artist_id")
+  id           String      @id @default(uuid())
+  artistId     String      @map("artist_id")
   title        String
   description  String?
-  videoUrl     String   @map("video_url")
-  thumbnailUrl String?  @map("thumbnail_url")
-  views        Int      @default(0)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  videoUrl     String      @map("video_url")
+  thumbnailUrl String?     @map("thumbnail_url")
+  duration     Int?
+  views        Int         @default(0)
+  status       VideoStatus @default(READY)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
   artist        Artist         @relation(fields: [artistId], references: [id], onDelete: Cascade)
   playlistItems PlaylistItem[]
+  watchHistory  WatchHistory[]
 
   @@map("videos")
 }
@@ -100,4 +109,16 @@ model PlaylistItem {
 
   @@unique([playlistId, videoId])
   @@map("playlist_items")
+}
+
+model WatchHistory {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  videoId   String   @map("video_id")
+  watchedAt DateTime @default(now()) @map("watched_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@map("watch_history")
 }
