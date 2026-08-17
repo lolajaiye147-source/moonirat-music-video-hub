@@ -60,6 +60,9 @@ GRANT ALL ON public.artists TO service_role;
 ALTER TABLE public.artists ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own artist profile" ON public.artists FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Public can view all artists" ON public.artists FOR SELECT USING (true);
+CREATE POLICY "Admins and moderators can verify artists" ON public.artists FOR UPDATE
+    USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'moderator'))
+    WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'moderator'));
 
 -- Videos
 CREATE TABLE public.videos (
@@ -84,6 +87,10 @@ GRANT ALL ON public.videos TO service_role;
 ALTER TABLE public.videos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own videos" ON public.videos FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Public can view public videos" ON public.videos FOR SELECT USING (is_public = true);
+CREATE POLICY "Admins and moderators can review videos" ON public.videos FOR SELECT
+    USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'moderator'));
+CREATE POLICY "Admins and moderators can remove videos" ON public.videos FOR DELETE
+    USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'moderator'));
 
 -- Follows
 CREATE TABLE public.follows (
@@ -210,3 +217,72 @@ CREATE TRIGGER update_videos_updated_at BEFORE UPDATE ON public.videos FOR EACH 
 
 DROP TRIGGER IF EXISTS update_playlists_updated_at ON public.playlists;
 CREATE TRIGGER update_playlists_updated_at BEFORE UPDATE ON public.playlists FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- V1 playback and upload metadata
+ALTER TABLE public.videos ADD COLUMN IF NOT EXISTS storage_path TEXT;
+ALTER TABLE public.videos ADD COLUMN IF NOT EXISTS master_playlist_url TEXT;
+
+-- Resume playback state for authenticated viewers
+CREATE TABLE IF NOT EXISTS public.watch_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    video_id UUID REFERENCES public.videos(id) ON DELETE CASCADE NOT NULL,
+    progress_seconds INTEGER NOT NULL DEFAULT 0,
+    duration_seconds INTEGER,
+    completed BOOLEAN NOT NULL DEFAULT false,
+    last_watched_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    UNIQUE(user_id, video_id)
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.watch_history TO authenticated;
+GRANT ALL ON public.watch_history TO service_role;
+ALTER TABLE public.watch_history ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own watch history" ON public.watch_history;
+CREATE POLICY "Users can manage their own watch history" ON public.watch_history
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP TRIGGER IF EXISTS update_watch_history_updated_at ON public.watch_history;
+CREATE TRIGGER update_watch_history_updated_at BEFORE UPDATE ON public.watch_history
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- Public video and thumbnail delivery with owner-scoped writes.
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES
+    ('videos', 'videos', true, 524288000, ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'application/vnd.apple.mpegurl', 'application/x-mpegURL']),
+    ('thumbnails', 'thumbnails', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Public can read Moonirat videos" ON storage.objects;
+CREATE POLICY "Public can read Moonirat videos" ON storage.objects
+    FOR SELECT USING (bucket_id IN ('videos', 'thumbnails'));
+
+DROP POLICY IF EXISTS "Users can upload their own Moonirat media" ON storage.objects;
+CREATE POLICY "Users can upload their own Moonirat media" ON storage.objects
+    FOR INSERT TO authenticated
+    WITH CHECK (
+        bucket_id IN ('videos', 'thumbnails')
+        AND (storage.foldername(name))[1] = auth.uid()::text
+    );
+
+DROP POLICY IF EXISTS "Users can update their own Moonirat media" ON storage.objects;
+CREATE POLICY "Users can update their own Moonirat media" ON storage.objects
+    FOR UPDATE TO authenticated
+    USING (
+        bucket_id IN ('videos', 'thumbnails')
+        AND (storage.foldername(name))[1] = auth.uid()::text
+    )
+    WITH CHECK (
+        bucket_id IN ('videos', 'thumbnails')
+        AND (storage.foldername(name))[1] = auth.uid()::text
+    );
+
+DROP POLICY IF EXISTS "Users can delete their own Moonirat media" ON storage.objects;
+CREATE POLICY "Users can delete their own Moonirat media" ON storage.objects
+    FOR DELETE TO authenticated
+    USING (
+        bucket_id IN ('videos', 'thumbnails')
+        AND (storage.foldername(name))[1] = auth.uid()::text
+    );
+
+GRANT INSERT ON public.video_views TO anon;

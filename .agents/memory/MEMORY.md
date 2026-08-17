@@ -1,0 +1,1 @@
+- [GitHub source of truth](github-source-of-truth.md) — Keep the connected GitHub repository authoritative for project code and sync from its default branch before making changes.

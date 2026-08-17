@@ -234,6 +234,50 @@ export type Database = {
           },
         ]
       }
+      watch_history: {
+        Row: {
+          completed: boolean
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          last_watched_at: string
+          progress_seconds: number
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          last_watched_at?: string
+          progress_seconds?: number
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          last_watched_at?: string
+          progress_seconds?: number
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_history_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           artist_id: string
@@ -245,6 +289,8 @@ export type Database = {
           id: string
           is_public: boolean
           release_date: string | null
+          storage_path: string | null
+          master_playlist_url: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -262,6 +308,8 @@ export type Database = {
           id?: string
           is_public?: boolean
           release_date?: string | null
+          storage_path?: string | null
+          master_playlist_url?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -279,6 +327,8 @@ export type Database = {
           id?: string
           is_public?: boolean
           release_date?: string | null
+          storage_path?: string | null
+          master_playlist_url?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string

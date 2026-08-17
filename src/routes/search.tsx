@@ -37,21 +37,17 @@ function formatFollowers(count: number) {
   return `${count}`;
 }
 
-function trackSearchEvent(type: "query" | "artist_click" | "video_click", data: Record<string, unknown>) {
-  if (import.meta.env.DEV) {
-    console.info("[moonirat:search]", type, data);
-  }
-}
-
 async function searchArtists(query: string) {
-  const { data, error } = await supabase
-    .from("artists")
-    .select("id, name, slug, profile_image_url, verified, bio")
-    .or(`name.ilike.%${query}%,slug.ilike.%${query}%`)
-    .order("verified", { ascending: false })
-    .limit(20);
-  if (error) throw error;
-  return data ?? [];
+  const select = "id, name, slug, profile_image_url, verified, bio";
+  const [nameResult, slugResult] = await Promise.all([
+    supabase.from("artists").select(select).ilike("name", `%${query}%`).limit(20),
+    supabase.from("artists").select(select).ilike("slug", `%${query}%`).limit(20),
+  ]);
+  if (nameResult.error) throw nameResult.error;
+  if (slugResult.error) throw slugResult.error;
+  const unique = new Map<string, (typeof nameResult.data)[number]>();
+  for (const artist of [...(nameResult.data ?? []), ...(slugResult.data ?? [])]) unique.set(artist.id, artist);
+  return [...unique.values()].sort((a, b) => Number(b.verified) - Number(a.verified)).slice(0, 20);
 }
 
 async function searchVideos(query: string) {
@@ -107,7 +103,6 @@ function VideoResultCard({
       to="/videos/$id"
       params={{ id: video.id }}
       className="flex gap-3 rounded-xl p-2 transition-colors hover:bg-glass group"
-      onClick={() => trackSearchEvent("video_click", { id: video.id, title: video.title })}
     >
       <div className="relative flex-shrink-0 w-36 sm:w-44 aspect-video rounded-lg overflow-hidden bg-deep-navy">
         {video.thumbnail_url ? (
@@ -161,7 +156,6 @@ function ArtistResultRow({
       to="/artists/$slug"
       params={{ slug: artist.slug }}
       className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-glass group"
-      onClick={() => trackSearchEvent("artist_click", { id: artist.id, name: artist.name })}
     >
       <div className="relative flex-shrink-0">
         <Avatar className="h-12 w-12 border-2 border-transparent transition-all group-hover:border-neon-purple">
@@ -267,7 +261,6 @@ function SearchPage() {
   } = useQuery({
     queryKey: ["search", "artists", debouncedQuery],
     queryFn: () => {
-      trackSearchEvent("query", { q: debouncedQuery, type: "artists" });
       return searchArtists(debouncedQuery);
     },
     enabled: isQueryReady,
@@ -282,7 +275,6 @@ function SearchPage() {
   } = useQuery({
     queryKey: ["search", "videos", debouncedQuery],
     queryFn: () => {
-      trackSearchEvent("query", { q: debouncedQuery, type: "videos" });
       return searchVideos(debouncedQuery);
     },
     enabled: isQueryReady,

@@ -9,6 +9,9 @@ import { Upload, Film, Image, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { getCurrentArtist } from "@/lib/moonirat-data";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({
@@ -20,10 +23,11 @@ export const Route = createFileRoute("/_authenticated/upload")({
   component: UploadPage,
 });
 
-const genres = ["Pop", "Hip Hop", "Electronic", "R&B", "Rock", "Indie", "Jazz", "Country", "Latin", "Classical"];
+const genres = ["Pop", "Hip Hop", "Electronic", "R&B", "Rock", "Indie", "Jazz", "Country", "Latin", "Classical", "Afrobeats", "Amapiano"];
 
 function UploadPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [genre, setGenre] = useState("");
@@ -34,10 +38,19 @@ function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const artistQuery = useQuery({
+    queryKey: ["artist", "current", user?.id],
+    queryFn: () => getCurrentArtist(user!.id),
+    enabled: Boolean(user?.id),
+  });
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith("video/")) {
+        toast.error("Please choose a supported video file.");
+        return;
+      }
       if (file.size > 500 * 1024 * 1024) {
         toast.error("Video must be less than 500MB");
         return;
@@ -49,6 +62,10 @@ function UploadPage() {
   const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please choose an image thumbnail.");
+        return;
+      }
       if (file.size > 10 * 1024 * 1024) {
         toast.error("Thumbnail must be less than 10MB");
         return;
@@ -71,34 +88,79 @@ function UploadPage() {
       return;
     }
 
+    if (!user) {
+      toast.error("You must be signed in to upload.");
+      return;
+    }
+    if (!artistQuery.data) {
+      toast.error("Create your artist profile before uploading.");
+      return;
+    }
+
     setIsUploading(true);
-    setUploadProgress(0);
-
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          return 95;
-        }
-        return prev + 5;
+    setUploadProgress(5);
+    const safeName = videoFile.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const videoPath = `${user.id}/videos/${crypto.randomUUID()}-${safeName}`;
+    const uploadedPaths: Array<{ bucket: "videos" | "thumbnails"; path: string }> = [];
+    let thumbnailPath: string | null = null;
+    try {
+      const videoUpload = await supabase.storage.from("videos").upload(videoPath, videoFile, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: videoFile.type,
       });
-    }, 300);
+      if (videoUpload.error) throw videoUpload.error;
+      uploadedPaths.push({ bucket: "videos", path: videoPath });
+      setUploadProgress(60);
 
-    // In a real implementation, this would upload to Supabase Storage
-    setTimeout(() => {
-      clearInterval(interval);
+      if (thumbnailFile) {
+        thumbnailPath = `${user.id}/thumbnails/${crypto.randomUUID()}-${thumbnailFile.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+        const thumbnailUpload = await supabase.storage.from("thumbnails").upload(thumbnailPath, thumbnailFile, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: thumbnailFile.type,
+        });
+        if (thumbnailUpload.error) throw thumbnailUpload.error;
+        uploadedPaths.push({ bucket: "thumbnails", path: thumbnailPath });
+      }
+      setUploadProgress(85);
+
+      const { data: videoPublic } = supabase.storage.from("videos").getPublicUrl(videoPath);
+      const thumbnailPublic = thumbnailPath
+        ? supabase.storage.from("thumbnails").getPublicUrl(thumbnailPath).data.publicUrl
+        : null;
+      const duration = await getVideoDuration(videoFile);
+      const inserted = await supabase.from("videos").insert({
+        artist_id: artistQuery.data.id,
+        user_id: user.id,
+        title: title.trim(),
+        description: description.trim() || null,
+        genre: genre || null,
+        video_url: videoPublic.publicUrl,
+        storage_path: videoPath,
+        thumbnail_url: thumbnailPublic,
+        duration,
+        release_date: new Date().toISOString().slice(0, 10),
+        is_public: true,
+      }).select("id").single();
+      if (inserted.error) throw inserted.error;
       setUploadProgress(100);
+      await queryClient.invalidateQueries({ queryKey: ["artist-dashboard", user.id] });
+      await queryClient.invalidateQueries({ queryKey: ["discover"] });
       toast.success("Video uploaded successfully!");
-      setIsUploading(false);
-      // Reset form
       setTitle("");
       setDescription("");
       setGenre("");
       setVideoFile(null);
       setThumbnailFile(null);
       setThumbnailPreview(null);
-    }, 4000);
+    } catch (error) {
+      await Promise.all(uploadedPaths.map(({ bucket, path }) => supabase.storage.from(bucket).remove([path])));
+      setUploadProgress(0);
+      toast.error(error instanceof Error ? error.message : "Upload failed. Nothing was published.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -236,6 +298,11 @@ function UploadPage() {
           )}
 
           {/* Submit */}
+          {!artistQuery.isLoading && !artistQuery.data && (
+            <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+              You need an artist profile before you can publish a video.
+            </p>
+          )}
           <Button
             type="submit"
             disabled={isUploading}
@@ -247,4 +314,22 @@ function UploadPage() {
       </div>
     </div>
   );
+}
+
+async function getVideoDuration(file: File) {
+  return new Promise<number | null>((resolve) => {
+    const element = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    element.preload = "metadata";
+    element.onloadedmetadata = () => {
+      const duration = Number.isFinite(element.duration) ? Math.round(element.duration) : null;
+      URL.revokeObjectURL(url);
+      resolve(duration);
+    };
+    element.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    element.src = url;
+  });
 }

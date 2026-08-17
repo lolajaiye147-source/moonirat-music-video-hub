@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { VideoCard } from "@/components/VideoCard";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Upload, Users, Eye, Music } from "lucide-react";
+import { BarChart3, Upload, Users, Eye, Music, AlertCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { getArtistDashboard } from "@/lib/moonirat-data";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/artist-dashboard")({
   head: () => ({
@@ -13,92 +17,67 @@ export const Route = createFileRoute("/_authenticated/artist-dashboard")({
   component: ArtistDashboardPage,
 });
 
-const myVideos = [
-  { id: "1", title: "Midnight Dreams", artistName: "Luna Echo", thumbnailUrl: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=640&h=360&fit=crop", duration: 215, viewCount: 125000 },
-  { id: "8", title: "Starfall", artistName: "Luna Echo", thumbnailUrl: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=640&h=360&fit=crop", duration: 189, viewCount: 45000 },
-];
-
 function ArtistDashboardPage() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const dashboardQuery = useQuery({
+    queryKey: ["artist-dashboard", user?.id],
+    queryFn: () => getArtistDashboard(user!.id),
+    enabled: Boolean(user?.id),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (video: { id: string; storage_path: string | null }) => {
+      if (video.storage_path) {
+        const result = await supabase.storage.from("videos").remove([video.storage_path]);
+        if (result.error) throw result.error;
+      }
+      const result = await supabase.from("videos").delete().eq("id", video.id).eq("user_id", user!.id);
+      if (result.error) throw result.error;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["artist-dashboard", user?.id] });
+      void queryClient.invalidateQueries({ queryKey: ["home"] });
+      void queryClient.invalidateQueries({ queryKey: ["discover"] });
+      toast.success("Video deleted");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Video could not be deleted"),
+  });
+
+  if (dashboardQuery.isLoading) return <div className="flex min-h-[70dvh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-neon-purple border-t-transparent" /></div>;
+  if (dashboardQuery.isError) return <StateMessage title="Dashboard unavailable" message="Your artist data could not be loaded." error />;
+  const dashboard = dashboardQuery.data;
+
   return (
     <div className="min-h-[100dvh] pb-20">
       <div className="px-4 py-4">
         <h1 className="text-xl font-bold text-foreground">Artist Dashboard</h1>
-
-        {/* Create Artist Profile CTA */}
-        <div className="mt-4 rounded-xl bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 p-4 border border-glass-border">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neon-purple/20">
-              <Music className="h-5 w-5 text-neon-purple" />
+        {!dashboard?.artist ? (
+          <div className="mt-4 rounded-xl border border-glass-border bg-gradient-to-r from-neon-purple/20 to-neon-blue/20 p-4">
+            <div className="flex items-start gap-3"><Music className="mt-1 h-5 w-5 text-neon-purple" /><div><h3 className="text-sm font-semibold text-foreground">Create your artist profile</h3><p className="mt-1 text-xs text-muted-foreground">An artist profile is required before publishing videos.</p><Button size="sm" className="mt-3 bg-neon-purple hover:bg-neon-purple/90" onClick={() => toast.info("Artist profile creation is not available in the current V1 schema.")}>Create Profile</Button></div></div>
+          </div>
+        ) : (
+          <>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <Metric icon={<Eye className="h-5 w-5 text-neon-blue" />} value={dashboard.totalViews.toLocaleString()} label="Total Views" />
+              <Metric icon={<Users className="h-5 w-5 text-neon-purple" />} value={dashboard.followerCount.toLocaleString()} label="Followers" />
+              <Metric icon={<Music className="h-5 w-5 text-neon-blue" />} value={dashboard.videos.length.toString()} label="Videos" />
+              <Metric icon={<BarChart3 className="h-5 w-5 text-neon-purple" />} value={dashboard.videos.length ? "Live" : "—"} label="Analytics" />
             </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-foreground">Become an Artist</h3>
-              <p className="text-xs text-muted-foreground mt-1">Create your artist profile to upload videos and reach fans worldwide.</p>
-              <Button size="sm" className="mt-2 bg-neon-purple hover:bg-neon-purple/90 text-xs h-8">
-                Create Profile
-              </Button>
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold text-foreground">My Videos</h2><Link to="/upload"><Button size="sm" className="bg-neon-purple hover:bg-neon-purple/90"><Upload className="mr-1 h-4 w-4" /> Upload</Button></Link></div>
+              {dashboard.videos.length ? <div className="space-y-3">{dashboard.videos.map((video) => <div key={video.id} className="group flex gap-3"><Link to="/videos/$id" params={{ id: video.id }} className="relative w-40 flex-shrink-0 overflow-hidden rounded-lg aspect-video bg-deep-navy">{video.thumbnail_url ? <img src={video.thumbnail_url} alt={video.title} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center"><Music className="h-6 w-6 text-neon-purple" /></div>}</Link><div className="min-w-0 flex-1 py-1"><Link to="/videos/$id" params={{ id: video.id }}><h3 className="line-clamp-2 text-sm font-semibold text-foreground group-hover:text-neon-purple">{video.title}</h3></Link><p className="mt-0.5 text-xs text-muted-foreground">{video.view_count.toLocaleString()} views</p><Button variant="outline" size="sm" disabled={deleteMutation.isPending} onClick={() => { if (window.confirm("Delete this published video?")) deleteMutation.mutate({ id: video.id, storage_path: video.storage_path }); }} className="mt-2 h-7 border-glass-border bg-glass text-xs text-destructive hover:bg-destructive/10">Delete</Button></div></div>)}</div> : <p className="py-10 text-center text-sm text-muted-foreground">You have not published any videos yet.</p>}
             </div>
-          </div>
-        </div>
-
-        {/* Analytics Cards */}
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-glass p-4 border border-glass-border">
-            <Eye className="h-5 w-5 text-neon-blue" />
-            <p className="mt-2 text-2xl font-bold text-foreground">170K</p>
-            <p className="text-xs text-muted-foreground">Total Views</p>
-          </div>
-          <div className="rounded-xl bg-glass p-4 border border-glass-border">
-            <Users className="h-5 w-5 text-neon-purple" />
-            <p className="mt-2 text-2xl font-bold text-foreground">45K</p>
-            <p className="text-xs text-muted-foreground">Followers</p>
-          </div>
-          <div className="rounded-xl bg-glass p-4 border border-glass-border">
-            <Music className="h-5 w-5 text-neon-blue" />
-            <p className="mt-2 text-2xl font-bold text-foreground">12</p>
-            <p className="text-xs text-muted-foreground">Videos</p>
-          </div>
-          <div className="rounded-xl bg-glass p-4 border border-glass-border">
-            <BarChart3 className="h-5 w-5 text-neon-purple" />
-            <p className="mt-2 text-2xl font-bold text-foreground">+12%</p>
-            <p className="text-xs text-muted-foreground">Growth</p>
-          </div>
-        </div>
-
-        {/* My Videos */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-foreground">My Videos</h2>
-            <Link to="/_authenticated/upload">
-              <Button size="sm" className="bg-neon-purple hover:bg-neon-purple/90">
-                <Upload className="h-4 w-4 mr-1" />
-                Upload
-              </Button>
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {myVideos.map((video) => (
-              <div key={video.id} className="flex gap-3 group">
-                <Link to="/videos/$id" params={{ id: video.id }} className="relative flex-shrink-0 w-40 aspect-video rounded-lg overflow-hidden video-card">
-                  <img src={video.thumbnailUrl} alt={video.title} className="h-full w-full object-cover" />
-                  <div className="absolute bottom-1 right-1 rounded bg-black/70 px-1 text-xs text-white">
-                    {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, "0")}
-                  </div>
-                </Link>
-                <div className="flex-1 py-1">
-                  <Link to="/videos/$id" params={{ id: video.id }}>
-                    <h3 className="text-sm font-semibold text-foreground line-clamp-2 group-hover:text-neon-purple">{video.title}</h3>
-                  </Link>
-                  <p className="text-xs text-muted-foreground mt-0.5">{video.viewCount.toLocaleString()} views</p>
-                  <div className="mt-2 flex gap-2">
-                    <Button variant="outline" size="sm" className="h-7 text-xs border-glass-border bg-glass">Edit</Button>
-                    <Button variant="outline" size="sm" className="h-7 text-xs border-glass-border bg-glass text-destructive hover:bg-destructive/10">Delete</Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
+}
+
+function Metric({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+  return <div className="rounded-xl border border-glass-border bg-glass p-4">{icon}<p className="mt-2 text-2xl font-bold text-foreground">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div>;
+}
+
+function StateMessage({ title, message, error = false }: { title: string; message: string; error?: boolean }) {
+  return <div className="flex min-h-[70dvh] flex-col items-center justify-center gap-3 px-6 text-center"><AlertCircle className={`h-8 w-8 ${error ? "text-destructive" : "text-muted-foreground"}`} /><h1 className="text-lg font-semibold text-foreground">{title}</h1><p className="text-sm text-muted-foreground">{message}</p></div>;
 }

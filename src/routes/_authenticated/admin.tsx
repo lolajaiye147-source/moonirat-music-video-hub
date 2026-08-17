@@ -1,10 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Music, CheckCircle, XCircle, Star } from "lucide-react";
+import { Shield, Users, Music, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { getAdminDashboard, removeVideoAsAdmin, setArtistVerified } from "@/lib/moonirat-data";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -16,135 +17,86 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-// Demo data
-const pendingArtists = [
-  { id: "1", name: "Neon Pulse", email: "neon@example.com", requestedAt: "2024-12-20", genre: "Electronic" },
-  { id: "2", name: "Rhythm Collective", email: "rhythm@example.com", requestedAt: "2024-12-19", genre: "Hip Hop" },
-];
-
-const allUsers = [
-  { id: "1", username: "luna_echo", email: "luna@example.com", role: "artist", joinedAt: "2023-06-15" },
-  { id: "2", username: "cyber_wave", email: "cyber@example.com", role: "artist", joinedAt: "2023-08-22" },
-  { id: "3", username: "music_fan", email: "fan@example.com", role: "user", joinedAt: "2024-01-10" },
-];
-
-const allVideos = [
-  { id: "1", title: "Midnight Dreams", artist: "Luna Echo", status: "public", reports: 0 },
-  { id: "2", title: "Neon Lights", artist: "Cyber Wave", status: "public", reports: 1 },
-];
-
 function AdminPage() {
-  const [artists, setArtists] = useState(pendingArtists);
-  const [users] = useState(allUsers);
-  const [videos] = useState(allVideos);
+  const queryClient = useQueryClient();
+  const dashboardQuery = useQuery({ queryKey: ["admin-dashboard"], queryFn: getAdminDashboard });
+  const verificationMutation = useMutation({
+    mutationFn: ({ id, verified }: { id: string; verified: boolean }) => setArtistVerified(id, verified),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["home", "artists"] });
+      void queryClient.invalidateQueries({ queryKey: ["discover", "artists"] });
+      toast.success("Artist verification updated");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Artist verification could not be updated"),
+  });
+  const removeMutation = useMutation({
+    mutationFn: removeVideoAsAdmin,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["home"] });
+      void queryClient.invalidateQueries({ queryKey: ["discover"] });
+      toast.success("Video removed");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Video could not be removed"),
+  });
 
-  const handleVerify = (id: string) => {
-    setArtists(artists.filter((a) => a.id !== id));
-    toast.success("Artist verified successfully");
-  };
-
-  const handleReject = (id: string) => {
-    setArtists(artists.filter((a) => a.id !== id));
-    toast.success("Artist application rejected");
-  };
+  if (dashboardQuery.isLoading) return <LoadingState />;
+  if (dashboardQuery.isError || !dashboardQuery.data) return <StateMessage title="Admin dashboard unavailable" message="The moderation data could not be loaded. Confirm the account has an admin or moderator role." error />;
+  const { users, pendingArtists, videos } = dashboardQuery.data;
 
   return (
     <div className="min-h-[100dvh] pb-20">
       <div className="px-4 py-4">
-        <div className="flex items-center gap-2 mb-6">
-          <Shield className="h-6 w-6 text-neon-blue" />
-          <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
+        <div className="mb-6 flex items-center gap-2"><Shield className="h-6 w-6 text-neon-blue" /><h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1></div>
+        <div className="mb-6 grid grid-cols-2 gap-3">
+          <Metric icon={<Users className="h-5 w-5 text-neon-purple" />} value={users.length.toLocaleString()} label="Total Users" />
+          <Metric icon={<Music className="h-5 w-5 text-neon-blue" />} value={videos.length.toLocaleString()} label="Total Videos" />
         </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="rounded-xl bg-glass p-4 border border-glass-border">
-            <Users className="h-5 w-5 text-neon-purple" />
-            <p className="mt-2 text-2xl font-bold text-foreground">{users.length}</p>
-            <p className="text-xs text-muted-foreground">Total Users</p>
-          </div>
-          <div className="rounded-xl bg-glass p-4 border border-glass-border">
-            <Music className="h-5 w-5 text-neon-blue" />
-            <p className="mt-2 text-2xl font-bold text-foreground">{videos.length}</p>
-            <p className="text-xs text-muted-foreground">Total Videos</p>
-          </div>
-        </div>
-
         <Tabs defaultValue="artists" className="w-full">
-          <TabsList className="w-full bg-glass border border-glass-border">
+          <TabsList className="w-full border border-glass-border bg-glass">
             <TabsTrigger value="artists" className="flex-1 data-[state=active]:bg-neon-purple data-[state=active]:text-white">Artists</TabsTrigger>
             <TabsTrigger value="users" className="flex-1 data-[state=active]:bg-neon-purple data-[state=active]:text-white">Users</TabsTrigger>
             <TabsTrigger value="videos" className="flex-1 data-[state=active]:bg-neon-purple data-[state=active]:text-white">Videos</TabsTrigger>
           </TabsList>
-
           <TabsContent value="artists" className="mt-4 space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground">Pending Verification ({artists.length})</h2>
-            {artists.map((artist) => (
-              <div key={artist.id} className="rounded-xl bg-glass p-4 border border-glass-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">{artist.name}</h3>
-                    <p className="text-xs text-muted-foreground">{artist.email}</p>
-                    <p className="text-xs text-muted-foreground">Genre: {artist.genre} • Requested: {artist.requestedAt}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleVerify(artist.id)} className="bg-neon-purple hover:bg-neon-purple/90 h-8">
-                      <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                      Verify
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleReject(artist.id)} className="border-glass-border bg-glass h-8 text-destructive hover:bg-destructive/10">
-                      <XCircle className="h-3.5 w-3.5 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
+            <h2 className="text-sm font-semibold text-muted-foreground">Pending Verification ({pendingArtists.length})</h2>
+            {pendingArtists.map((artist) => (
+              <div key={artist.id} className="rounded-xl border border-glass-border bg-glass p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div><h3 className="text-sm font-semibold text-foreground">{artist.name}</h3><p className="text-xs text-muted-foreground">{artist.profile?.display_name ?? artist.profile?.username ?? "No profile name"}</p><p className="text-xs text-muted-foreground">Requested {new Date(artist.created_at).toLocaleDateString()}</p></div>
+                  <Button size="sm" disabled={verificationMutation.isPending} onClick={() => verificationMutation.mutate({ id: artist.id, verified: true })} className="h-8 bg-neon-purple hover:bg-neon-purple/90"><CheckCircle className="mr-1 h-3.5 w-3.5" /> Verify</Button>
                 </div>
               </div>
             ))}
-            {artists.length === 0 && (
-              <div className="text-center py-8">
-                <CheckCircle className="mx-auto h-8 w-8 text-neon-purple/50" />
-                <p className="mt-2 text-sm text-muted-foreground">No pending artist applications</p>
-              </div>
-            )}
+            {!pendingArtists.length && <EmptyState icon={<CheckCircle className="h-8 w-8 text-neon-purple/50" />} message="No pending artist applications" />}
           </TabsContent>
-
           <TabsContent value="users" className="mt-4 space-y-3">
-            {users.map((user) => (
-              <div key={user.id} className="rounded-xl bg-glass p-4 border border-glass-border flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">@{user.username}</h3>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={user.role === "artist" ? "default" : "secondary"} className={user.role === "artist" ? "bg-neon-purple" : ""}>
-                    {user.role}
-                  </Badge>
-                  <Button size="sm" variant="outline" className="h-7 text-xs border-glass-border bg-glass">Manage</Button>
-                </div>
-              </div>
-            ))}
+            {users.map((user) => <div key={user.id} className="flex items-center justify-between rounded-xl border border-glass-border bg-glass p-4"><div><h3 className="text-sm font-semibold text-foreground">{user.displayName ?? (user.username ? `@${user.username}` : "Unnamed user")}</h3><p className="text-xs text-muted-foreground">Joined {new Date(user.joinedAt).toLocaleDateString()}</p></div><div className="flex gap-1">{user.roles.length ? user.roles.map((role) => <Badge key={role} variant={role === "admin" ? "default" : "secondary"} className={role === "admin" ? "bg-neon-purple" : ""}>{role}</Badge>) : <Badge variant="secondary">user</Badge>}</div></div>)}
+            {!users.length && <EmptyState icon={<Users className="h-8 w-8 text-muted-foreground" />} message="No user profiles found" />}
           </TabsContent>
-
           <TabsContent value="videos" className="mt-4 space-y-3">
-            {videos.map((video) => (
-              <div key={video.id} className="rounded-xl bg-glass p-4 border border-glass-border flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">{video.title}</h3>
-                  <p className="text-xs text-muted-foreground">{video.artist}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {video.reports > 0 && (
-                    <Badge variant="destructive" className="text-xs">{video.reports} report</Badge>
-                  )}
-                  <Button size="sm" variant="outline" className="h-7 text-xs border-glass-border bg-glass text-destructive hover:bg-destructive/10">
-                    Remove
-                  </Button>
-                </div>
-              </div>
-            ))}
+            {videos.map((video) => <div key={video.id} className="flex items-center justify-between rounded-xl border border-glass-border bg-glass p-4"><div className="min-w-0"><h3 className="truncate text-sm font-semibold text-foreground">{video.title}</h3><p className="text-xs text-muted-foreground">{video.artists?.name ?? "Unknown artist"} · {video.is_public ? "Public" : "Private"}</p></div><Button size="sm" variant="outline" disabled={removeMutation.isPending} onClick={() => { if (window.confirm("Remove this video?")) removeMutation.mutate(video.id); }} className="ml-3 h-7 border-glass-border bg-glass text-xs text-destructive hover:bg-destructive/10"><Trash2 className="mr-1 h-3.5 w-3.5" /> Remove</Button></div>)}
+            {!videos.length && <EmptyState icon={<Music className="h-8 w-8 text-muted-foreground" />} message="No videos found" />}
           </TabsContent>
         </Tabs>
       </div>
     </div>
   );
+}
+
+function Metric({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+  return <div className="rounded-xl border border-glass-border bg-glass p-4">{icon}<p className="mt-2 text-2xl font-bold text-foreground">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div>;
+}
+
+function EmptyState({ icon, message }: { icon: React.ReactNode; message: string }) {
+  return <div className="py-8 text-center">{icon}<p className="mt-2 text-sm text-muted-foreground">{message}</p></div>;
+}
+
+function LoadingState() {
+  return <div className="flex min-h-[70dvh] items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-neon-purple border-t-transparent" /></div>;
+}
+
+function StateMessage({ title, message, error = false }: { title: string; message: string; error?: boolean }) {
+  return <div className="flex min-h-[70dvh] flex-col items-center justify-center gap-3 px-6 text-center"><AlertCircle className={`h-8 w-8 ${error ? "text-destructive" : "text-muted-foreground"}`} /><h1 className="text-lg font-semibold text-foreground">{title}</h1><p className="text-sm text-muted-foreground">{message}</p></div>;
 }
