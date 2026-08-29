@@ -30,7 +30,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) checkAdminStatus(session.user.id);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) checkAdminStatus(session.user.id);
@@ -56,14 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signUp(email: string, password: string, username: string) {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { username } },
     });
-    if (!error && data.user) {
-      await supabase.from("profiles").update({ username, display_name: username }).eq("id", data.user.id);
-    }
     return { error };
   }
 

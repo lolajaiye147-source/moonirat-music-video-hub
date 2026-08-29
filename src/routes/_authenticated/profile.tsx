@@ -10,7 +10,12 @@ import { Camera, Settings, Music, Heart, Users, LogOut, ChevronRight, Shield } f
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getProfile, getArtistDashboard, getFollowingCount, updateProfile } from "@/lib/moonirat-data";
+import {
+  getProfile,
+  getArtistDashboard,
+  getFollowingCount,
+  updateProfile,
+} from "@/lib/moonirat-data";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -72,6 +77,7 @@ function ProfilePage() {
         bio: bio.trim() || null,
         avatar_url: avatarUrl,
       });
+      await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
       queryClient.setQueryData(["profile", user.id], saved);
       toast.success("Profile updated");
       setIsEditing(false);
@@ -96,7 +102,9 @@ function ProfilePage() {
     setIsUploadingAvatar(true);
     const path = `${user.id}/avatar-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
     try {
-      const upload = await supabase.storage.from("thumbnails").upload(path, file, { upsert: true, contentType: file.type });
+      const upload = await supabase.storage
+        .from("thumbnails")
+        .upload(path, file, { upsert: true, contentType: file.type });
       if (upload.error) throw upload.error;
       const { data } = supabase.storage.from("thumbnails").getPublicUrl(path);
       setAvatarUrl(data.publicUrl);
@@ -113,9 +121,17 @@ function ProfilePage() {
     <div className="min-h-[100dvh] pb-20">
       <div className="px-4 py-4">
         <h1 className="text-xl font-bold text-foreground">Profile</h1>
+        {profileQuery.isLoading && (
+          <p className="mt-6 text-sm text-muted-foreground">Loading your profile…</p>
+        )}
+        {profileQuery.isError && (
+          <p className="mt-6 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            Your profile could not be loaded. Refresh and try again.
+          </p>
+        )}
 
         {/* Profile Header */}
-        <div className="mt-6 flex flex-col items-center">
+        <div className="mt-6 flex flex-col items-center" aria-busy={profileQuery.isLoading}>
           <div className="relative">
             <Avatar className="h-24 w-24 border-2 border-neon-purple">
               <AvatarImage src={avatarUrl ?? undefined} />
@@ -123,8 +139,19 @@ function ProfilePage() {
                 {(displayName || username || user?.email || "U")[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarSelect} />
-            <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={isUploadingAvatar} className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-neon-purple text-white disabled:opacity-50">
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleAvatarSelect}
+            />
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+              className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-neon-purple text-white disabled:opacity-50"
+            >
               <Camera className="h-4 w-4" />
             </button>
           </div>
@@ -138,7 +165,9 @@ function ProfilePage() {
         <div className="mt-6 grid grid-cols-3 gap-3">
           <div className="rounded-xl bg-glass p-3 text-center border border-glass-border">
             <Music className="mx-auto h-5 w-5 text-neon-purple" />
-            <p className="mt-1 text-lg font-bold text-foreground">{artistQuery.data?.videos.length ?? 0}</p>
+            <p className="mt-1 text-lg font-bold text-foreground">
+              {artistQuery.data?.videos.length ?? 0}
+            </p>
             <p className="text-xs text-muted-foreground">Videos</p>
           </div>
           <div className="rounded-xl bg-glass p-3 text-center border border-glass-border">
@@ -166,7 +195,11 @@ function ProfilePage() {
             </div>
             <div className="space-y-2">
               <Label>Username</Label>
-              <Input value={username} onChange={(e) => setUsername(e.target.value)} className="bg-glass border-glass-border" />
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="bg-glass border-glass-border"
+              />
             </div>
             <div className="space-y-2">
               <Label>Bio</Label>
@@ -178,8 +211,20 @@ function ProfilePage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleSaveProfile} disabled={isSaving} className="flex-1 bg-neon-purple hover:bg-neon-purple/90">{isSaving ? "Saving…" : "Save"}</Button>
-              <Button onClick={() => setIsEditing(false)} variant="outline" className="border-glass-border bg-glass">Cancel</Button>
+              <Button
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="flex-1 bg-neon-purple hover:bg-neon-purple/90"
+              >
+                {isSaving ? "Saving…" : "Save"}
+              </Button>
+              <Button
+                onClick={() => setIsEditing(false)}
+                variant="outline"
+                className="border-glass-border bg-glass"
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         ) : (
@@ -195,7 +240,10 @@ function ProfilePage() {
 
         {/* Menu */}
         <div className="mt-6 space-y-1">
-          <Link to="/artist-dashboard" className="flex items-center justify-between rounded-xl bg-glass p-4 border border-glass-border hover:bg-glass/80 transition-colors">
+          <Link
+            to="/artist-dashboard"
+            className="flex items-center justify-between rounded-xl bg-glass p-4 border border-glass-border hover:bg-glass/80 transition-colors"
+          >
             <div className="flex items-center gap-3">
               <Music className="h-5 w-5 text-neon-purple" />
               <span className="text-sm font-medium text-foreground">Artist Dashboard</span>
@@ -204,7 +252,10 @@ function ProfilePage() {
           </Link>
 
           {isAdmin && (
-            <Link to="/admin" className="flex items-center justify-between rounded-xl bg-glass p-4 border border-glass-border hover:bg-glass/80 transition-colors">
+            <Link
+              to="/admin"
+              className="flex items-center justify-between rounded-xl bg-glass p-4 border border-glass-border hover:bg-glass/80 transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <Shield className="h-5 w-5 text-neon-blue" />
                 <span className="text-sm font-medium text-foreground">Admin Panel</span>

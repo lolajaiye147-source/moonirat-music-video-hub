@@ -65,7 +65,9 @@ export async function getFeaturedArtists(limit = 12) {
   return throwIfError(
     await supabase
       .from("artists")
-      .select("id, name, slug, bio, profile_image_url, cover_image_url, verified, featured, created_at, updated_at, user_id")
+      .select(
+        "id, name, slug, bio, profile_image_url, cover_image_url, verified, featured, created_at, updated_at, user_id",
+      )
       .order("featured", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(limit),
@@ -74,7 +76,12 @@ export async function getFeaturedArtists(limit = 12) {
 
 export async function getVideo(id: string) {
   return throwIfError(
-    await supabase.from("videos").select(videoSelect).eq("id", id).eq("is_public", true).maybeSingle(),
+    await supabase
+      .from("videos")
+      .select(videoSelect)
+      .eq("id", id)
+      .eq("is_public", true)
+      .maybeSingle(),
   ) as unknown as VideoWithArtist | null;
 }
 
@@ -108,13 +115,19 @@ export async function getArtistVideos(artistId: string) {
 }
 
 export async function getFollowerCount(artistId: string) {
-  const result = await supabase.from("follows").select("id", { count: "exact", head: true }).eq("artist_id", artistId);
+  const result = await supabase
+    .from("follows")
+    .select("id", { count: "exact", head: true })
+    .eq("artist_id", artistId);
   if (result.error) throw new Error(result.error.message);
   return result.count ?? 0;
 }
 
 export async function getFollowingCount(userId: string) {
-  const result = await supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", userId);
+  const result = await supabase
+    .from("follows")
+    .select("id", { count: "exact", head: true })
+    .eq("follower_id", userId);
   if (result.error) throw new Error(result.error.message);
   return result.count ?? 0;
 }
@@ -134,24 +147,38 @@ export async function getFollowState(userId: string | undefined, artistId: strin
 export async function setFollowState(userId: string, artistId: string, following: boolean) {
   if (following) {
     const insert: TablesInsert<"follows"> = { follower_id: userId, artist_id: artistId };
-    throwIfError(await supabase.from("follows").upsert(insert, { onConflict: "follower_id,artist_id", ignoreDuplicates: true }));
+    throwIfError(
+      await supabase
+        .from("follows")
+        .upsert(insert, { onConflict: "follower_id,artist_id", ignoreDuplicates: true }),
+    );
   } else {
-    throwIfError(await supabase.from("follows").delete().eq("follower_id", userId).eq("artist_id", artistId));
+    throwIfError(
+      await supabase.from("follows").delete().eq("follower_id", userId).eq("artist_id", artistId),
+    );
   }
 }
 
 export async function getProfile(userId: string) {
-  return throwIfError(await supabase.from("profiles").select("*").eq("id", userId).maybeSingle()) as Profile | null;
+  return throwIfError(
+    await supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+  ) as Profile | null;
 }
 
 export async function updateProfile(userId: string, update: TablesUpdate<"profiles">) {
   return throwIfError(
-    await supabase.from("profiles").update(update).eq("id", userId).select("*").single(),
+    await supabase
+      .from("profiles")
+      .upsert({ id: userId, ...update }, { onConflict: "id" })
+      .select("*")
+      .single(),
   ) as Profile;
 }
 
 export async function getCurrentArtist(userId: string) {
-  return throwIfError(await supabase.from("artists").select("*").eq("user_id", userId).maybeSingle()) as Artist | null;
+  return throwIfError(
+    await supabase.from("artists").select("*").eq("user_id", userId).maybeSingle(),
+  ) as Artist | null;
 }
 
 export async function getUserPlaylists(userId: string) {
@@ -166,21 +193,35 @@ export async function getUserPlaylists(userId: string) {
 
 export async function createPlaylist(userId: string, name: string) {
   return throwIfError(
-    await supabase.from("playlists").insert({ user_id: userId, name: name.trim() }).select("*").single(),
+    await supabase
+      .from("playlists")
+      .insert({ user_id: userId, name: name.trim() })
+      .select("*")
+      .single(),
   ) as Playlist;
 }
 
 export async function deletePlaylist(userId: string, playlistId: string) {
-  throwIfError(await supabase.from("playlists").delete().eq("id", playlistId).eq("user_id", userId));
+  throwIfError(
+    await supabase.from("playlists").delete().eq("id", playlistId).eq("user_id", userId),
+  );
 }
 
 export async function addVideoToPlaylist(playlistId: string, videoId: string) {
-  const result = await supabase.from("playlist_videos").insert({ playlist_id: playlistId, video_id: videoId });
+  const result = await supabase
+    .from("playlist_videos")
+    .insert({ playlist_id: playlistId, video_id: videoId });
   if (result.error && result.error.code !== "23505") throw new Error(result.error.message);
 }
 
 export async function removeVideoFromPlaylist(playlistId: string, videoId: string) {
-  throwIfError(await supabase.from("playlist_videos").delete().eq("playlist_id", playlistId).eq("video_id", videoId));
+  throwIfError(
+    await supabase
+      .from("playlist_videos")
+      .delete()
+      .eq("playlist_id", playlistId)
+      .eq("video_id", videoId),
+  );
 }
 
 export async function recordVideoView(videoId: string, viewerId?: string) {
@@ -190,7 +231,12 @@ export async function recordVideoView(videoId: string, viewerId?: string) {
 
 export async function getWatchHistory(userId: string, videoId: string) {
   return throwIfError(
-    await supabase.from("watch_history").select("*").eq("user_id", userId).eq("video_id", videoId).maybeSingle(),
+    await supabase
+      .from("watch_history")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("video_id", videoId)
+      .maybeSingle(),
   ) as WatchHistory | null;
 }
 
@@ -200,7 +246,8 @@ export async function saveWatchProgress(
   progressSeconds: number,
   durationSeconds: number | null,
 ) {
-  const completed = durationSeconds !== null && durationSeconds > 0 && progressSeconds >= durationSeconds * 0.95;
+  const completed =
+    durationSeconds !== null && durationSeconds > 0 && progressSeconds >= durationSeconds * 0.95;
   const record: TablesInsert<"watch_history"> = {
     user_id: userId,
     video_id: videoId,
@@ -222,7 +269,11 @@ export async function getArtistDashboard(userId: string) {
   const artist = await getCurrentArtist(userId);
   if (!artist) return { artist: null, videos: [] as Video[], totalViews: 0, followerCount: 0 };
   const videos = throwIfError(
-    await supabase.from("videos").select("*").eq("artist_id", artist.id).order("created_at", { ascending: false }),
+    await supabase
+      .from("videos")
+      .select("*")
+      .eq("artist_id", artist.id)
+      .order("created_at", { ascending: false }),
   ) as Video[];
   const followerCount = await getFollowerCount(artist.id);
   return {
@@ -235,7 +286,10 @@ export async function getArtistDashboard(userId: string) {
 
 export async function getAdminDashboard() {
   const [profilesResult, rolesResult, artistsResult, videosResult] = await Promise.all([
-    supabase.from("profiles").select("id, username, display_name, created_at").order("created_at", { ascending: false }),
+    supabase
+      .from("profiles")
+      .select("id, username, display_name, created_at")
+      .order("created_at", { ascending: false }),
     supabase.from("user_roles").select("user_id, role"),
     supabase.from("artists").select("*").order("created_at", { ascending: false }),
     supabase.from("videos").select(videoSelect).order("created_at", { ascending: false }),
