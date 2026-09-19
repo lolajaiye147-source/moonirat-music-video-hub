@@ -1,1 +1,8 @@
-- [GitHub source of truth](github-source-of-truth.md) — Keep the connected GitHub repository authoritative for project code and sync from its default branch before making changes.
+- [Moonirat runtime architecture](moonirat-runtime-architecture.md) — Preserve TanStack Start SSR and route splitting; do not substitute a client-only SPA.
+- [Moonirat V1 playback boundary](moonirat-v1-playback-boundary.md) — Prioritize reliable direct playback and validation; defer transcoding/HLS infrastructure until after V1 stability.
+- [Supabase task sandbox access](supabase-task-sandbox-access.md) — Confirm MCP callbacks are mounted before relying on them; an added connection alone may not expose SQL tools.
+- [Qualified view RPC boundary](qualified-view-rpc-boundary.md) — Public SECURITY DEFINER access is intentional only for the constrained view RPC; direct table inserts stay revoked.
+- [Supabase RLS zero-row writes](supabase-rls-zero-row-writes.md) — A blocked update/delete may return no error and affect zero rows; verify persisted state when testing isolation.
+- [Moonirat account-to-artist boundary](moonirat-account-artist-boundary.md) — Every signup is a viewer/fan account; artist identity is optional and created only through explicit onboarding.
+- [Moonirat H.264 browser certification](moonirat-h264-browser-certification.md) — Replit test Chromium may lack H.264 decoding; separate codec-runtime limits from asset validity.
+- [Supabase Storage deletion verification](supabase-storage-deletion-verification.md) — Trust exact-name listing absence; cached public URLs may stay 200 and missing objects may return 400.

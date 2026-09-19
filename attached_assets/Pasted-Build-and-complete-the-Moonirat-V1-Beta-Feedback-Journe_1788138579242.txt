@@ -1,0 +1,122 @@
+Build and complete the Moonirat V1 Beta Feedback Journey now.
+
+IMPORTANT: This is a PRODUCTION READINESS task, not a new product-feature expansion.
+
+First, inspect the existing Moonirat repository, Supabase migrations, RLS policies, feedback-related components/routes, authentication, admin authorization, and the current controlled-beta gate documentation. Do NOT assume anything is missing until you verify the existing implementation.
+
+DO NOT:
+
+* create a new database
+* create a second backend
+* use Replit Postgres/Drizzle as a second data authority
+* add mock/demo/hardcoded feedback data
+* weaken RLS
+* expose the Supabase service-role key to the browser
+* add unnecessary features
+* change Moonirat’s V1 architecture
+* remove existing working functionality
+
+Moonirat’s source of truth remains:
+TanStack Start + React + Supabase Auth + Supabase PostgreSQL + Supabase Storage + existing RLS.
+
+GOAL:
+Complete and certify the feedback journey for BOTH viewers and creators, with secure admin handling.
+
+1. VIEWER/CREATOR FEEDBACK
+
+* Authenticated viewers and creators can submit feedback.
+* Support useful categories such as Bug, Feature Request, Playback Issue, Upload Issue, Search/Discovery, Verification, and General.
+* Required subject and description validation.
+* Clear loading, success, empty, and error states.
+* Prevent accidental duplicate submissions.
+* Never fake a successful submission.
+
+2. USER FEEDBACK CENTER
+
+* Users can see only their own feedback.
+* Display submission date, category, priority, status, and admin response.
+* Statuses must be backed by Supabase data.
+* Users must be able to track changes without exposing another user’s submissions.
+* Preserve existing realtime behavior if already implemented.
+
+3. ADMIN FEEDBACK WORKFLOW
+
+* Admin-only access must be enforced server-side/database-side.
+* Admins can view submitted feedback.
+* Filter by status/category/priority.
+* Update status.
+* Add an admin response/note visible to the submitting user.
+* Record meaningful moderation/admin actions where the existing architecture supports it.
+* Do not allow ordinary users to perform admin mutations.
+
+4. SUPABASE SECURITY
+
+* Inspect the current feedback table and migration before changing anything.
+* Preserve or improve RLS.
+* Verify authenticated users can INSERT and SELECT only their own records.
+* Verify admins can review/manage feedback through the existing secure authorization model.
+* Anonymous users must not gain unintended write/read access.
+* Service-role credentials must remain server-only.
+* If a migration is required, create a clean Supabase migration only. Do not provision another database.
+
+5. UX
+
+* Feedback entry point should be easy to find but must not interrupt video playback.
+* Make the experience work on desktop and mobile.
+* Keep Moonirat’s creator-first AND viewer-first vision intact.
+* Do not make the platform feel like it is only for artists; viewers and followers are first-class users.
+* Preserve the existing visual language and navigation.
+
+6. END-TO-END VALIDATION
+    Test the complete journey:
+
+Viewer/Creator:
+sign in → submit feedback → confirmation → view feedback → see status → see admin response.
+
+Admin:
+sign in as admin → open feedback → inspect submission → change status → add response → verify user sees the update.
+
+Security:
+user A cannot read user B’s feedback.
+ordinary user cannot perform admin feedback mutations.
+signed-out user cannot access protected feedback data.
+
+Mobile:
+verify the feedback flow works without overflow, crashes, or navigation problems.
+
+7. PRODUCTION SAFETY
+    Before declaring completion:
+
+* run TypeScript/typecheck
+* run production build/SSR validation
+* inspect browser console for new errors
+* verify Supabase requests
+* verify no 401/403/500 errors caused by the implementation
+* verify RLS behavior
+* verify no mock feedback data remains
+* verify no secrets are exposed
+* verify existing Viewer, Creator, Admin, Auth, Upload, Playback, Search, Discover, Follow, Playlist, and Storage functionality remains intact.
+
+8. CERTIFICATION
+    Update or create:
+    MOONIRAT_V1_BETA_FEEDBACK_CERTIFICATION.md
+
+Use explicit fields:
+
+FEEDBACK_JOURNEY: PASS/WARN/FAIL
+VIEWER_FEEDBACK: PASS/WARN/FAIL
+CREATOR_FEEDBACK: PASS/WARN/FAIL
+ADMIN_FEEDBACK: PASS/WARN/FAIL
+FEEDBACK_PERSISTENCE: PASS/WARN/FAIL
+FEEDBACK_RLS: PASS/WARN/FAIL
+FEEDBACK_STATUS_UPDATES: PASS/WARN/FAIL
+MOBILE_FEEDBACK: PASS/WARN/FAIL
+TYPECHECK: PASS/WARN/FAIL
+BUILD: PASS/WARN/FAIL
+
+Document exactly what was tested, what passed, what failed, and any manual Supabase action still required.
+
+IMPORTANT FINAL RULE:
+Do not claim PASS based only on code inspection. Perform actual end-to-end validation wherever the environment permits. If something cannot be validated because of an external Supabase limitation, rate it WARN/MANUAL_ACTION_REQUIRED rather than pretending it passed.
+
+When finished, give a concise implementation summary and identify ONLY the remaining genuine blockers to Moonirat’s controlled beta gate.

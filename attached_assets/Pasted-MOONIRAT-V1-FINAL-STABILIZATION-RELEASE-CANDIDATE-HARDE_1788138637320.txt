@@ -1,0 +1,370 @@
+MOONIRAT V1 — FINAL STABILIZATION & RELEASE-CANDIDATE HARDENING
+
+The Beta Feedback Journey is now complete. Moonirat V1 is entering FINAL STABILIZATION.
+
+This is NOT a feature-development task.
+
+The goal is to turn the existing Moonirat V1 into a stable, secure, production-quality release candidate for a SMALL CONTROLLED BETA.
+
+FIRST: thoroughly inspect the existing repository, current Supabase project integration, migrations, RLS policies, Storage configuration, routes, authentication, Viewer journey, Creator journey, Admin journey, Feedback journey, and all existing certification/gate documents.
+
+Do not assume previous work is correct. Verify it.
+
+SOURCE OF TRUTH:
+
+* Existing Moonirat repository
+* Existing Supabase project
+* Existing Supabase PostgreSQL
+* Existing Supabase Auth
+* Existing Supabase Storage
+* Existing RLS/security model
+
+DO NOT:
+
+* provision a new database
+* introduce Replit Postgres/Drizzle as another production database
+* create a second backend
+* replace Supabase
+* add AI
+* add monetization
+* add ads
+* add comments
+* add unnecessary social features
+* add microservices
+* add speculative infrastructure
+* add permanent transcoding/HLS pipelines unless validation proves V1 actually requires them
+* introduce mock/demo data
+* weaken RLS
+* expose service-role credentials
+* redesign working features unnecessarily
+
+MOONIRAT V1 REMAINS:
+Upload → Discover → Watch → Follow
+
+with viewers, followers, creators, and administrators all treated as first-class users.
+
+==================================================
+PHASE 1 — REPOSITORY & ARCHITECTURE AUDIT
+
+Inspect for:
+
+* duplicate/nested files
+* dead code
+* broken imports
+* obsolete Lovable scaffolding
+* unused dependencies
+* accidental second backend
+* environment-variable inconsistencies
+* client/server boundary mistakes
+* service-role exposure
+* incorrect Supabase client usage
+* route mismatches
+* hydration problems
+* SSR regressions
+* fake/demo data
+* console errors
+* unnecessary network requests
+
+Do not rewrite working architecture just for style.
+
+==================================================
+PHASE 2 — VIEWER JOURNEY
+
+Test end-to-end:
+
+signed-out visitor
+→ Home
+→ Discover
+→ Search
+→ open artist
+→ open video
+→ playback
+→ authentication
+→ follow artist
+→ profile
+→ playlist
+→ feedback
+
+Verify:
+
+* loading states
+* empty states
+* errors
+* mobile layout
+* playback controls
+* resume
+* qualified view tracking
+* cooldown
+* follow persistence
+* playlist persistence
+* RLS isolation
+
+==================================================
+PHASE 3 — CREATOR JOURNEY
+
+Test:
+
+sign up
+→ profile
+→ become creator/artist
+→ create artist profile
+→ upload
+→ upload progress
+→ interrupted/recoverable upload
+→ video creation
+→ dashboard
+→ analytics
+→ edit video
+→ verification
+→ notifications
+→ feedback
+
+Verify every operation persists to Supabase.
+
+No fake success messages.
+
+==================================================
+PHASE 4 — ADMIN JOURNEY
+
+Verify:
+
+admin authentication
+→ admin authorization
+→ verification review
+→ approve/reject/request information
+→ feature/unfeature artist
+→ video moderation
+→ Storage cleanup
+→ feedback review
+→ admin response
+→ notifications
+→ audit trail
+
+Verify ordinary users cannot access or perform admin operations.
+
+Test RLS and authorization against real Supabase policies.
+
+==================================================
+PHASE 5 — DATABASE & SUPABASE HARDENING
+
+Inspect the live Supabase project and repository migrations.
+
+Verify:
+
+* RLS enabled on all protected tables
+* correct ownership policies
+* correct admin policies
+* no unintended anonymous writes
+* no direct video-view insertion bypass
+* foreign-key indexes
+* important query indexes
+* no duplicate indexes
+* no dangerous permissive policies
+* Storage policies
+* Storage cleanup
+* migration ordering
+* idempotency where appropriate
+
+Do NOT create duplicate migrations or indexes.
+
+If a database change is required, create a clean Supabase migration and clearly identify it as requiring application to the existing project.
+
+==================================================
+PHASE 6 — AUTHENTICATION
+
+Verify:
+
+* signup
+* signin
+* signout
+* password reset
+* session persistence
+* protected routes
+* admin authorization
+* rate-limit behavior
+* error handling
+* no duplicate signup requests
+
+Do not fake successful authentication.
+
+If Leaked Password Protection is unavailable on the current Supabase plan, document it as MANUAL_ACTION_REQUIRED rather than pretending it is fixed.
+
+==================================================
+PHASE 7 — PLAYBACK
+
+Validate the existing playback architecture.
+
+Test:
+
+* valid MP4
+* H.264/AAC
+* range requests
+* seeking
+* buffering
+* resume
+* invalid media
+* mobile controls
+* signed-out playback
+* view threshold
+* cooldown
+
+Do not add another video pipeline merely because a restricted test browser cannot decode H.264/AAC.
+
+Separate:
+APPLICATION FAILURE
+from
+TEST-ENVIRONMENT CODEC LIMITATION.
+
+If browser validation cannot be completed in the current environment, record:
+
+MP4_BROWSER_MATRIX: MANUAL_ACTION_REQUIRED
+
+==================================================
+PHASE 8 — PERFORMANCE & SCALE
+
+Verify:
+
+* Discover pagination
+* Search pagination
+* bounded queries
+* no unbounded database reads
+* no obvious N+1 queries
+* lazy loading
+* route splitting
+* video loading behavior
+* mobile performance
+* reasonable database query limits
+
+Do not perform speculative optimization.
+
+==================================================
+PHASE 9 — SECURITY
+
+Perform a focused security audit.
+
+Check:
+
+* service-role key never reaches browser
+* environment variables correctly separated
+* RLS isolation
+* admin authorization
+* Storage access
+* feedback isolation
+* profile isolation
+* playlist isolation
+* watch history isolation
+* moderation authorization
+* verification authorization
+* no insecure RPC functions
+* no client-controlled privileged fields
+
+Never weaken security to make a test pass.
+
+==================================================
+PHASE 10 — CLEANUP
+
+Remove only genuinely unused/dead production scaffolding that is safe to remove.
+
+Do not remove anything that is still required by TanStack Start, Supabase, routing, SSR, builds, or production operation.
+
+Document remaining Lovable residue if removing it could introduce risk.
+
+==================================================
+PHASE 11 — FULL VALIDATION
+
+Run:
+
+* TypeScript/typecheck
+* production build
+* SSR smoke tests
+* desktop browser test
+* mobile browser test
+* route validation
+* Supabase request validation
+* authentication validation
+* RLS validation
+* Storage validation
+* playback validation
+* feedback validation
+
+There must be no new:
+
+* 401
+* 403
+* 404 caused by the app
+* 429 caused by duplicate application requests
+* 500
+* hydration-breaking errors
+* runtime crashes
+
+==================================================
+PHASE 12 — RELEASE CANDIDATE CERTIFICATION
+
+Create/update:
+
+MOONIRAT_V1_FINAL_STABILIZATION_REPORT.md
+
+Use these exact fields:
+
+V1_STATUS:
+VIEWER_JOURNEY:
+CREATOR_JOURNEY:
+ADMIN_JOURNEY:
+FEEDBACK_JOURNEY:
+AUTH:
+RLS:
+DATABASE:
+STORAGE:
+VIEW_TRACKING:
+UPLOAD_RECOVERY:
+PLAYBACK:
+DISCOVERY_SCALE:
+SEARCH_SCALE:
+MOBILE:
+SSR:
+TYPECHECK:
+BUILD:
+SECURITY:
+PERFORMANCE:
+SUPABASE_RATE_LIMITING:
+LEAKED_PASSWORD_PROTECTION:
+MP4_BROWSER_MATRIX:
+PUBLIC_BETA_READY:
+
+Every field must be:
+
+PASS
+WARN
+FAIL
+or
+MANUAL_ACTION_REQUIRED
+
+Do not mark anything PASS based only on code inspection.
+
+==================================================
+FINAL RULE
+
+Moonirat is now feature-frozen for V1.
+
+If you discover a problem:
+
+1. Fix the smallest safe V1-compatible implementation.
+2. Do not expand scope.
+3. Do not introduce new architecture.
+4. Re-test the affected journey.
+5. Re-test adjacent journeys for regression.
+
+At the end, provide:
+
+A. What was actually fixed
+B. What was actually tested
+C. What remains
+D. Which items are genuine blockers
+E. Which items are only manual/environment limitations
+F. Whether Moonirat is ready for a small controlled beta
+
+Do not recommend additional feature development unless a genuine V1 blocker requires it.
+
+FINAL OBJECTIVE:
+
+Make Moonirat V1 stable enough that real viewers, followers, creators, and administrators can use it safely in a small controlled beta without turning the V1 into an overbuilt platform.

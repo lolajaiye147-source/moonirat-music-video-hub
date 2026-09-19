@@ -1,0 +1,399 @@
+MOONIRAT V1 — FINAL PRODUCTION BLOCKER CLOSURE PASS
+
+Moonirat V1 is now feature-complete enough for Public Beta.
+
+DO NOT add new product features.
+
+DO NOT expand the V1 scope.
+
+The objective of this task is to close the remaining production blockers identified by:
+
+MOONIRAT_V1_FINAL_PRODUCTION_GATE.md
+
+Current remaining blockers:
+
+1. Durable view threshold + cooldown
+2. Supabase Leaked Password Protection
+3. Resumable/recoverable uploads
+4. Admin Storage cleanup when videos are removed
+5. Target-browser MP4 compatibility validation
+6. Discovery pagination and scale certification
+
+PRODUCT VISION
+
+Moonirat serves BOTH:
+
+CREATORS
+
+* Create artist profile
+* Upload music videos
+* Manage videos
+* Apply for verification
+* View performance
+
+VIEWERS / FOLLOWERS
+
+* Discover music videos
+* Search artists and videos
+* Watch videos reliably
+* Follow artists
+* Save videos/playlists
+* Return to creators they follow
+
+V1 core loop:
+
+UPLOAD → DISCOVER → WATCH → FOLLOW → RETURN
+
+Preserve this simplicity.
+
+⸻
+
+RULE 1 — NO NEW FEATURES
+
+Do NOT implement:
+
+* monetization
+* tips
+* ads
+* comments
+* AI
+* recommendation engines
+* microservices
+* complex transcoding infrastructure
+* unnecessary realtime systems
+* creator CRM
+* payment systems
+* additional social features
+
+Only fix the six remaining production blockers.
+
+⸻
+
+P0 — DURABLE VIEW TRACKING
+
+Audit the existing video view implementation.
+
+The view threshold and cooldown must be enforced server-side/database-side.
+
+Requirements:
+
+* View only becomes valid after the existing watch threshold.
+* Existing 24-hour cooldown must remain.
+* Refreshing the page must not create duplicate views.
+* Repeated playback attempts must not bypass the cooldown.
+* Client-side state/localStorage must NOT be the security mechanism.
+* Playback errors must never create a valid view.
+* Seeking must not trivially manufacture a view.
+* Anonymous/signed-out viewing behavior must follow the existing V1 rules.
+* Preserve current analytics behavior.
+
+Use Supabase RPC/database logic where appropriate.
+
+Do not expose service-role credentials to the browser.
+
+Test with real Supabase data.
+
+⸻
+
+P0 — LEAKED PASSWORD PROTECTION
+
+Verify the current Supabase Auth security configuration.
+
+Enable Supabase leaked-password protection if it is available through the project’s supported configuration.
+
+If this cannot be enabled through the available MCP/API tooling:
+
+* DO NOT fake completion.
+* Document exactly what must be enabled manually in Supabase.
+* Keep the application code unchanged unless necessary.
+
+The final report must clearly state:
+
+LEAKED_PASSWORD_PROTECTION = PASS / MANUAL_ACTION_REQUIRED
+
+⸻
+
+P0 — ADMIN STORAGE CLEANUP
+
+When an authorized admin removes a video:
+
+1. Verify admin authorization server-side/database-side.
+2. Remove the database record safely.
+3. Remove the associated video Storage object.
+4. Remove the associated thumbnail Storage object when applicable.
+5. Handle missing Storage objects gracefully.
+6. Do not allow ordinary users to delete arbitrary Storage objects.
+7. Prevent orphaned files whenever possible.
+8. Preserve auditability of the moderation action.
+
+IMPORTANT:
+
+Never expose the Supabase service-role key in frontend code.
+
+If Storage deletion requires privileged execution, use a secure Supabase Edge Function or SECURITY DEFINER mechanism with proper authorization.
+
+Do not create a new external backend solely for this.
+
+⸻
+
+P1 — RESUMABLE / RECOVERABLE UPLOADS
+
+Audit the current creator upload implementation.
+
+For large music videos:
+
+* upload progress must be accurate;
+* temporary network failures should be recoverable;
+* retry should not create duplicate database rows;
+* incomplete uploads must not become publicly playable videos;
+* successful upload should create exactly one video record;
+* thumbnail handling must remain reliable;
+* creators must receive a clear success/error state.
+
+Prefer Supabase’s supported upload capabilities.
+
+Do NOT build a custom distributed upload service.
+
+If true resumable uploads cannot be safely implemented without expanding V1 architecture, implement the safest supported retry/recovery behavior and document the limitation rather than creating unnecessary infrastructure.
+
+⸻
+
+P1 — MP4 BROWSER COMPATIBILITY
+
+The existing verified media object is:
+
+* valid H.264/AAC
+* valid MP4
+* correctly served by Supabase Storage
+* supports HTTP range requests
+
+A restricted test browser previously reported media error code 4.
+
+Do NOT treat this as a Storage failure.
+
+Do NOT permanently generate WebM derivatives.
+
+Do NOT introduce transcoding merely to satisfy the restricted test browser.
+
+Validate the existing production playback architecture on supported environments:
+
+* Safari/iOS
+* Android Chrome
+* desktop Chrome
+* desktop Safari
+* Firefox where appropriate
+
+Confirm:
+
+* direct MP4 playback
+* HLS fallback when master_playlist_url exists
+* native HLS where supported
+* graceful unsupported-browser messaging
+* retry behavior
+* fullscreen
+* seeking
+* buffering
+* resume playback
+* view tracking
+
+If a particular test runtime cannot decode the MP4, document:
+
+BROWSER_LIMITATION
+
+instead of changing Moonirat’s production architecture unnecessarily.
+
+⸻
+
+P1 — DISCOVERY PAGINATION & SCALE
+
+Audit:
+
+* Home
+* Discover
+* Search
+* Related videos
+
+Do not load the entire video catalog into the browser.
+
+Implement safe pagination/cursor-based loading where needed.
+
+Requirements:
+
+* predictable page size;
+* no duplicate videos across pages;
+* stable ordering;
+* loading state;
+* empty state;
+* error state;
+* retry;
+* mobile-friendly infinite scrolling or Load More;
+* filters remain functional;
+* search remains debounced;
+* no unnecessary database requests.
+
+Review Supabase indexes for the actual query patterns.
+
+Do not add indexes blindly.
+
+Use EXPLAIN/query analysis where available.
+
+Verify RLS policies remain efficient.
+
+⸻
+
+FINAL SECURITY REVIEW
+
+Before declaring completion, inspect:
+
+* authentication
+* authorization
+* RLS
+* Storage policies
+* admin actions
+* artist ownership
+* video ownership
+* playlist ownership
+* verification workflow
+* feedback data
+* notification data
+* profile data
+* Storage deletion
+* service-role exposure
+* environment variables
+
+Confirm no secret is shipped to the client.
+
+⸻
+
+FINAL END-TO-END TEST
+
+Test the complete V1 journey.
+
+CREATOR:
+
+Sign up
+→ create artist profile
+→ upload video
+→ upload completes
+→ video becomes available
+→ edit video
+→ dashboard shows video
+→ analytics record correctly
+→ verification workflow remains functional
+
+VIEWER:
+
+Open Moonirat
+→ Discover
+→ Search
+→ open artist
+→ open video
+→ play video
+→ reach view threshold
+→ view recorded once
+→ follow artist
+→ save video
+→ playlist persists
+→ return to video
+→ resume works
+
+ADMIN:
+
+Open admin
+→ authorization enforced
+→ review artist
+→ approve/reject verification
+→ moderate video
+→ remove video
+→ associated Storage objects cleaned
+→ audit state remains correct
+
+SIGNED-OUT USER:
+
+Browse
+→ Discover
+→ Search
+→ Artist page
+→ Watch public video
+
+Verify that protected operations remain protected.
+
+⸻
+
+FINAL VALIDATION
+
+Run:
+
+* typecheck
+* production build
+* route validation
+* Supabase migration validation
+* RLS validation
+* Storage policy validation
+* browser validation
+* mobile validation where available
+* upload validation
+* playback validation
+* view tracking validation
+* pagination validation
+
+Confirm:
+
+* 0 TypeScript errors
+* 0 production build errors
+* 0 unexpected 401/403/500 errors
+* 0 fake production data
+* 0 exposed service-role secrets
+* 0 unauthorized admin operations
+* 0 known orphaned video Storage objects created by moderation
+* no duplicate view inflation
+* no duplicate uploads
+
+⸻
+
+FINAL GATE
+
+Update:
+
+MOONIRAT_V1_FINAL_PRODUCTION_GATE.md
+
+Use exactly:
+
+V1_STATUS = PASS / NEEDS_FIXES
+
+VIEW_TRACKING = PASS / NEEDS_FIXES
+
+LEAKED_PASSWORD_PROTECTION = PASS / MANUAL_ACTION_REQUIRED
+
+UPLOAD_RECOVERY = PASS / NEEDS_FIXES
+
+STORAGE_CLEANUP = PASS / NEEDS_FIXES
+
+MP4_COMPATIBILITY = PASS / BROWSER_LIMITATION / NEEDS_FIXES
+
+DISCOVERY_SCALE = PASS / NEEDS_FIXES
+
+SECURITY = PASS / NEEDS_FIXES
+
+TYPECHECK = PASS / FAIL
+
+BUILD = PASS / FAIL
+
+END_TO_END = PASS / FAIL
+
+PUBLIC_BETA_READY = YES / NO
+
+Do not declare PUBLIC_BETA_READY = YES if any genuine P0 security, data-integrity, authorization, or core playback blocker remains.
+
+If something requires a manual Supabase Dashboard action, clearly separate it from code implementation.
+
+When complete, give a concise list of:
+
+1. Fixed
+2. Verified
+3. Manual actions remaining
+4. Genuine blockers remaining
+
+Do not propose another feature after this pass.
+
+The goal is to finish Moonirat V1, not endlessly expand it.

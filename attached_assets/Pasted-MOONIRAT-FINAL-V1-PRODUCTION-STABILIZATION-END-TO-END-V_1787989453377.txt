@@ -1,0 +1,554 @@
+MOONIRAT — FINAL V1 PRODUCTION STABILIZATION & END-TO-END VALIDATION
+
+You are working on Moonirat, a creator-first music-video platform that serves BOTH creators/artists and viewers/fans.
+
+Do NOT add new product features during this pass.
+
+The goal is to make the existing V1 actually work end-to-end, securely, reliably, and ready for controlled public beta.
+
+NON-NEGOTIABLE MOONIRAT VISION
+
+Moonirat is NOT an artist-only platform.
+
+It has two equally important experiences:
+
+Viewer / Fan
+
+Discover → Search → Watch → Like → Follow → Save → Return
+
+Creator / Artist
+
+Sign up → Create artist profile → Upload → Publish → Get discovered → Gain followers → View analytics
+
+The product must support both journeys.
+
+⸻
+
+PHASE 1 — SEARCH THE ENTIRE REPOSITORY FIRST
+
+Before modifying anything:
+	1.	Inspect the complete repository.
+	2.	Identify the actual production frontend architecture.
+	3.	Confirm Supabase is the ONLY production backend/database/storage system.
+	4.	Identify all active routes.
+	5.	Identify all Supabase migrations.
+	6.	Identify all hardcoded/demo/mock data.
+	7.	Identify all TODO/stub/no-op functions.
+	8.	Identify all fake counters, fake analytics, fake notifications, fake likes, fake playlists, fake verification states, and fake uploads.
+	9.	Identify all remaining Lovable, Replit Postgres, Express, Drizzle, TanStack Start, or legacy code that is still imported by production code.
+	10.	Do NOT delete legacy code until you prove it is unused.
+	11.	Treat /archive as reference-only and never import from it.
+
+Create a concise audit before making changes.
+
+⸻
+
+PHASE 2 — SUPABASE IS THE SOURCE OF TRUTH
+
+Moonirat uses:
+	•	Supabase Auth
+	•	Supabase PostgreSQL
+	•	Supabase Storage
+	•	Supabase RLS
+	•	Supabase Realtime only where justified
+
+Do NOT create another database.
+
+Do NOT provision Replit Postgres.
+
+Do NOT introduce a second backend.
+
+Do NOT create duplicate tables simply because something is missing.
+
+Before creating a migration, search all existing migrations and confirm the table/function/index does not already exist.
+
+If something already exists, safely extend it instead of duplicating it.
+
+⸻
+
+PHASE 3 — FIX THE CURRENT VIDEO PLAYER ISSUE
+
+There is currently a media playback/source-derivation issue.
+
+Fix it properly.
+
+Requirements:
+	•	Use the actual video_url / media URL returned from the Supabase videos row.
+	•	Do not depend on unnecessary memoized source derivation.
+	•	Never use a hardcoded video URL.
+	•	Do not silently replace a valid database URL with demo content.
+	•	Support the current direct video URL implementation.
+	•	Preserve the existing HLS-ready architecture if master_playlist_url exists.
+	•	HLS should be optional and forward-compatible.
+	•	If HLS is unavailable, gracefully use the direct video URL.
+	•	Handle missing, invalid, loading, and failed media states.
+	•	Retry must work.
+	•	Do not break Safari/iOS playback.
+	•	Do not introduce a new video-transcoding service during V1 stabilization.
+
+Test:
+	1.	Open a real video.
+	2.	Confirm the URL comes from Supabase.
+	3.	Confirm playback starts.
+	4.	Confirm pause/play works.
+	5.	Confirm seeking works.
+	6.	Confirm fullscreen works.
+	7.	Confirm mobile playback works.
+	8.	Confirm an invalid media URL produces a useful error state instead of crashing.
+
+⸻
+
+PHASE 4 — FIX SUPABASE AUTHORIZATION / 406 NOISE
+
+The admin-role lookup currently produces unnecessary 406 behavior.
+
+Fix the query correctly.
+
+When checking whether the current user is an admin:
+	•	Do not assume a row exists.
+	•	Use nullable/safe single-row handling.
+	•	“No admin role” must be treated as a normal authorization result, NOT an application error.
+	•	Avoid .single() where zero rows are expected.
+	•	Do not expose privileged information.
+	•	Never put the Supabase service-role key in frontend code.
+	•	Never bypass RLS from the browser.
+
+Ensure:
+
+Viewer without admin role → normal user experience.
+
+Admin → admin functionality.
+
+Unauthenticated user → authentication-required experience.
+
+No role → no crash, no repeated 406 noise.
+
+⸻
+
+PHASE 5 — VERIFY THE VIEWER EXPERIENCE
+
+Test every core viewer journey using REAL Supabase data.
+
+Viewer journey
+
+Sign up / Sign in
+↓
+Home
+↓
+Discover
+↓
+Search
+↓
+Open video
+↓
+Watch
+↓
+Like
+↓
+Follow artist
+↓
+Save to playlist
+↓
+Return to playlist
+↓
+Open artist profile
+↓
+Receive relevant notification
+↓
+Submit feedback
+
+Every action must persist correctly.
+
+No fake state.
+
+No local-only mutations pretending to be saved.
+
+No fake counters.
+
+No fake success messages.
+
+⸻
+
+PHASE 6 — VERIFY THE CREATOR EXPERIENCE
+
+Test:
+
+Sign up
+↓
+Create artist profile
+↓
+Complete profile
+↓
+Upload thumbnail
+↓
+Upload video
+↓
+Create video database record
+↓
+Publish video
+↓
+Video appears on artist page
+↓
+Video becomes discoverable according to visibility rules
+↓
+Viewer watches
+↓
+View is recorded correctly
+↓
+Follower count updates
+↓
+Creator sees analytics
+↓
+Creator can edit video
+↓
+Creator can delete/unpublish video
+↓
+Creator can apply for verification
+
+Every step must use real Supabase persistence.
+
+⸻
+
+PHASE 7 — PLAYLISTS & LIKES
+
+Verify:
+	•	Create playlist
+	•	Rename playlist
+	•	Delete playlist
+	•	Add video
+	•	Remove video
+	•	Prevent duplicate playlist entries
+	•	Like video
+	•	Unlike video
+	•	Persist likes after refresh
+	•	Correct like count
+	•	Correct playlist count
+	•	Correct ownership permissions
+
+A viewer must never see a success message if the database write failed.
+
+Use optimistic UI only where rollback is correctly implemented.
+
+⸻
+
+PHASE 8 — ARTIST VERIFICATION
+
+Verify the existing verification workflow.
+
+Creator:
+	•	Apply
+	•	See pending state
+	•	See rejection reason
+	•	Reapply when permitted
+	•	See approved state
+	•	See verified badge
+
+Admin:
+	•	See pending applications
+	•	Review application
+	•	Approve
+	•	Reject with reason
+	•	Request more information
+	•	See audit history
+
+Ensure RLS prevents:
+	•	artists approving themselves
+	•	users viewing private verification documents
+	•	non-admins performing admin actions
+
+⸻
+
+PHASE 9 — ADMIN SECURITY
+
+Audit every admin action.
+
+Admin access must be enforced server-side/database-side through secure Supabase authorization.
+
+Do NOT rely only on:
+	•	hidden buttons
+	•	frontend route guards
+	•	local isAdmin state
+
+Verify RLS and SECURITY DEFINER functions where needed.
+
+Test a normal viewer attempting admin operations.
+
+Expected result:
+
+DENIED.
+
+⸻
+
+PHASE 10 — STORAGE SECURITY
+
+Inspect every bucket.
+
+Confirm correct policies for:
+	•	videos
+	•	thumbnails
+	•	avatars
+	•	verification documents
+
+Verification documents MUST remain private.
+
+Do not expose private verification documents through permanent public URLs.
+
+For private assets, use short-lived signed URLs only when authorized.
+
+For video playback, use the existing architecture and do not introduce expiring one-year URLs.
+
+⸻
+
+PHASE 11 — REMOVE PRODUCTION MOCKS
+
+Search the entire active application for:
+	•	demoArtists
+	•	demoVideos
+	•	demoPlaylists
+	•	fakeUsers
+	•	placeholder analytics
+	•	fake follower counts
+	•	fake view counts
+	•	fake likes
+	•	setTimeout pretending to save
+	•	localStorage pretending to persist database state
+	•	hardcoded success responses
+	•	hardcoded admin data
+	•	fake notifications
+
+Replace only genuine production mocks.
+
+Do NOT mistake legitimate empty arrays used as React/query defaults for mock data.
+
+⸻
+
+PHASE 12 — ERROR / LOADING / EMPTY STATES
+
+Every major Supabase query must have:
+
+Loading state
++
+Empty state
++
+Error state
++
+Retry where appropriate
+
+Empty database ≠ application error.
+
+For example:
+
+“No videos yet” is correct.
+
+“Something went wrong loading videos” is correct when the query actually fails.
+
+Never show fake content simply because the database is empty.
+
+⸻
+
+PHASE 13 — MOBILE-FIRST QUALITY
+
+Test the complete application at mobile widths.
+
+Check:
+	•	Bottom navigation
+	•	Video player
+	•	Upload
+	•	Search
+	•	Artist profile
+	•	Playlists
+	•	Notifications
+	•	Feedback
+	•	Dashboard
+	•	Admin
+	•	Modals
+	•	Forms
+	•	Safe areas
+	•	Touch targets
+	•	Scrolling
+	•	Keyboard behavior
+
+Do not sacrifice mobile usability for desktop layouts.
+
+⸻
+
+PHASE 14 — PERFORMANCE
+
+Verify:
+	•	No unnecessary Supabase requests
+	•	No request on every keystroke
+	•	Search remains debounced
+	•	React Query caching works
+	•	Images are reasonably optimized
+	•	Video files are not unnecessarily loaded on listing pages
+	•	HLS.js remains lazy-loaded if present
+	•	No unnecessary realtime subscriptions
+	•	No memory leaks from subscriptions
+	•	Components unsubscribe on unmount
+
+⸻
+
+PHASE 15 — REALTIME
+
+Use Supabase Realtime only for functionality where live updates materially improve the experience.
+
+Appropriate examples:
+	•	Notifications
+	•	Verification status
+	•	Relevant creator/admin updates
+
+Do NOT add realtime everywhere.
+
+Do NOT use realtime as a substitute for proper database queries.
+
+⸻
+
+PHASE 16 — ENVIRONMENT & SECRETS
+
+Audit environment usage.
+
+Frontend may use:
+
+VITE_SUPABASE_URL
+
+VITE_SUPABASE_PUBLISHABLE_KEY
+
+Never expose:
+
+SUPABASE_SERVICE_ROLE_KEY
+
+Never hardcode private secrets.
+
+The service-role key must only exist as a protected server-side secret where absolutely required.
+
+If an environment variable is missing, the application should fail gracefully with a useful setup/health state rather than a blank crash screen.
+
+⸻
+
+PHASE 17 — DATABASE VALIDATION
+
+Do not provision a new database.
+
+Do not replace the user’s existing Supabase project.
+
+Inspect the migrations and create only the migrations necessary to bring the existing Supabase schema to the expected V1 state.
+
+Validate:
+	•	tables
+	•	columns
+	•	indexes
+	•	foreign keys
+	•	constraints
+	•	triggers
+	•	RLS
+	•	storage policies
+	•	RPC functions
+
+Clearly identify which migrations still need to be applied.
+
+⸻
+
+PHASE 18 — BUILD & TYPE SAFETY
+
+Run:
+	•	TypeScript check
+	•	production build
+	•	lint if configured
+	•	route validation
+	•	Supabase query validation
+
+Fix all actual errors.
+
+Do not hide errors with any, @ts-ignore, or fake fallback logic unless there is a documented and justified reason.
+
+⸻
+
+PHASE 19 — END-TO-END CERTIFICATION
+
+Create:
+
+MOONIRAT_V1_FINAL_E2E_CERTIFICATION.md
+
+Include:
+
+Viewer
+	•	Authentication
+	•	Home
+	•	Discover
+	•	Search
+	•	Watch
+	•	Like
+	•	Follow
+	•	Playlist
+	•	Artist profile
+	•	Notifications
+	•	Feedback
+
+Creator
+	•	Artist profile
+	•	Upload
+	•	Publish
+	•	Edit
+	•	Delete/unpublish
+	•	Followers
+	•	Analytics
+	•	Verification
+
+Admin
+	•	Authorization
+	•	Verification
+	•	Moderation
+	•	Feedback
+	•	Featured artists
+	•	Users
+	•	Audit logs
+	•	Health
+
+For every journey mark:
+
+PASS
+WARN
+FAIL
+
+Do not claim PASS unless it was actually verified.
+
+⸻
+
+PHASE 20 — FINAL RULE
+
+Do NOT add monetization.
+
+Do NOT add ads.
+
+Do NOT add comments.
+
+Do NOT add AI.
+
+Do NOT add microservices.
+
+Do NOT add unnecessary social features.
+
+Do NOT redesign Moonirat.
+
+Do NOT replace working architecture merely for preference.
+
+Do NOT provision another database.
+
+Do NOT generate fake seed content just to make screenshots look populated.
+
+Focus entirely on making the existing Moonirat V1 real, stable, secure, mobile-friendly, and launch-ready.
+
+At the end, report:
+	1.	What you found
+	2.	What you fixed
+	3.	What remains
+	4.	Exact Supabase migrations still required
+	5.	Any manual dashboard actions required
+	6.	Build status
+	7.	TypeScript status
+	8.	Viewer E2E status
+	9.	Creator E2E status
+	10.	Admin/security status
+	11.	Final V1 certification: PASS / WARN / FAIL
+
+Do not stop after fixing only the first error. Continue until the full audit is complete.

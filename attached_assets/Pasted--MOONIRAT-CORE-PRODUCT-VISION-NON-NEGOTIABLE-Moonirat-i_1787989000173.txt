@@ -1,0 +1,149 @@
+# MOONIRAT CORE PRODUCT VISION — NON-NEGOTIABLE
+
+Moonirat is a creator-first music-video platform built for both creators and viewers.
+
+Creator-first does NOT mean creator-only.
+
+The product must serve two equally important experiences:
+
+## 1. CREATORS / ARTISTS
+
+Artists and creators should be able to:
+
+- Create and manage their artist profile
+- Upload music videos
+- Manage and edit their videos
+- Build followers
+- Get verified
+- Be discovered
+- Track views, followers, and content performance
+- Manage playlists where applicable
+- Receive relevant notifications
+- Participate in creator onboarding and beta programs
+
+## 2. VIEWERS / FANS / FOLLOWERS
+
+Viewers and followers are a core part of Moonirat, not an afterthought.
+
+They should be able to:
+
+- Discover music videos
+- Watch videos reliably
+- Search for artists and videos
+- Follow artists
+- Like videos
+- Save videos to playlists
+- Create and manage personal playlists
+- View their library/watch history where implemented
+- Receive notifications
+- Discover trending and new releases
+- Discover featured and verified creators
+- Share videos
+- Submit feedback and report problems
+- Have a smooth mobile-first viewing experience
+
+## 3. THE MOONIRAT ECOSYSTEM
+
+Moonirat should create a healthy loop:
+
+Creator uploads
+→ Moonirat makes the content discoverable
+→ Viewer discovers and watches
+→ Viewer follows/likes/saves
+→ Creator gains audience
+→ More content is created
+→ More viewers discover Moonirat
+
+Every major product decision should strengthen this loop.
+
+## PRODUCT PRIORITY
+
+When evaluating a feature, ask:
+
+1. Does it improve the creator experience?
+2. Does it improve the viewer/fan experience?
+3. Does it improve the connection between creators and their audience?
+4. Does it improve discovery, watching, following, or retention?
+5. Does it make Moonirat more trustworthy and production-ready?
+
+Do not build features solely because they benefit creators if they make the viewer experience worse.
+
+Do not build features solely for viewers if they undermine creator ownership, safety, or content management.
+
+## V1 PRODUCT SCOPE
+
+The core V1 loop remains:
+
+Upload → Discover → Watch → Follow
+
+Supporting functionality may include:
+
+- Search
+- Likes
+- Playlists
+- Profiles
+- Artist pages
+- Notifications
+- Verification
+- Basic creator analytics
+- Feedback
+- Admin moderation
+- Beta/community systems
+
+Keep V1 focused and production-ready.
+
+Do NOT introduce unnecessary complexity such as:
+
+- AI
+- Ads
+- Monetization
+- Comments
+- Microservices
+- Complex recommendation engines
+- Unnecessary realtime features
+
+unless explicitly approved for a later version.
+
+## TECHNICAL PRINCIPLE
+
+All creator and viewer experiences must use real production data.
+
+Do not use:
+
+- hardcoded demo arrays
+- fake counters
+- fake followers
+- fake likes
+- fake playlists
+- fake analytics
+- fake verification states
+- fake notifications
+
+Use Supabase Auth, PostgreSQL, Storage, RLS, and Realtime where appropriate.
+
+Graceful empty states are preferred over fake data.
+
+## UX PRINCIPLE
+
+Moonirat should feel like a real music-video platform from both sides.
+
+A new viewer should be able to:
+
+Open Moonirat → discover something → watch → like/follow → save → return later.
+
+A new creator should be able to:
+
+Join → create artist profile → upload → publish → get discovered → gain followers → understand performance.
+
+Both journeys must work end-to-end before declaring a feature or release production-ready.
+
+## BRAND POSITIONING
+
+Moonirat is:
+
+A home for music videos, creators, and the people who love discovering them.
+
+Creator-first.
+Viewer-friendly.
+Community-driven.
+Built for global music discovery, with strong African roots without limiting Moonirat to Africa.

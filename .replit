@@ -1,0 +1,35 @@
+modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmand1bGdlZHF2dG9sYWF6ZGFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMjAwOTksImV4cCI6MjA5Njc5NjA5OX0.L744Gtn7VOoXqpCUvR_VFZ3oTcJDK8-Xc1LAOmqDlxQ"
+SUPABASE_URL = "https://pfjwulgedqvtolaazdap.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmand1bGdlZHF2dG9sYWF6ZGFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMjAwOTksImV4cCI6MjA5Njc5NjA5OX0.L744Gtn7VOoXqpCUvR_VFZ3oTcJDK8-Xc1LAOmqDlxQ"
+VITE_SUPABASE_URL = "https://pfjwulgedqvtolaazdap.supabase.co"
+AUTH_EMAIL_FROM = "Moonirat <auth@moonirat.space>"
+PUBLIC_APP_URL = "https://moonirat.com"
+PUBLIC_REDIRECT_HOSTS = "moonirat.space,moonirat-v-1-test-runtime.replit.app"
+VITE_PUBLIC_APP_URL = "https://moonirat.com"
+
+[nix]
+channel = "stable-25_05"

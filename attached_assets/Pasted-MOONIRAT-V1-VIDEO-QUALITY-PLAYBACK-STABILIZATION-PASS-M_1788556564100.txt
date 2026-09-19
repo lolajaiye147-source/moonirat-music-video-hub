@@ -1,0 +1,399 @@
+MOONIRAT V1 — VIDEO QUALITY & PLAYBACK STABILIZATION PASS
+
+Moonirat is now at CONDITIONAL_PASS and approved for a small controlled beta.
+
+The core V1 architecture is frozen.
+
+This task is ONLY to validate and improve the reliability and quality of Moonirat’s existing video upload and playback pipeline.
+
+Do not add new product features.
+
+Do not introduce a second backend.
+
+Do not introduce a new database.
+
+Do not add monetization, ads, comments, AI, microservices, or speculative infrastructure.
+
+Do not add a transcoding service, WebM derivative, or HLS pipeline unless the audit proves the existing architecture cannot reliably support the required V1 playback environments.
+
+The existing H.264/AAC MP4 remains the canonical V1 video format.
+
+⸻
+
+1. INSPECT THE CURRENT PIPELINE FIRST
+
+Before changing anything, inspect:
+
+* Upload component
+* Supabase Storage configuration
+* videos bucket
+* video database schema
+* stored video URL/path strategy
+* MIME validation
+* file-size limits
+* upload recovery
+* retry logic
+* player component
+* playback source generation
+* resume logic
+* view tracking
+* discovery/video queries
+* thumbnail handling
+
+Identify exactly how:
+
+UPLOAD → STORAGE → DATABASE → VIDEO PLAYER
+
+currently works.
+
+Do not rewrite working systems unnecessarily.
+
+⸻
+
+2. VIDEO QUALITY VALIDATION
+
+Determine whether Moonirat currently preserves the creator’s uploaded video quality.
+
+Test realistic creator files including:
+
+* 720p H.264/AAC MP4
+* 1080p H.264/AAC MP4
+* different frame rates
+* portrait video where supported
+* landscape video
+* reasonable file sizes
+
+Verify:
+
+* video resolution is preserved
+* aspect ratio is preserved
+* audio remains synchronized
+* audio is audible
+* no unexpected compression occurs
+* no corruption occurs
+* MIME type is correct
+* byte-range requests work
+* seeking works
+* video starts without unnecessary delay
+
+Do not silently downgrade creator uploads.
+
+If the current system does not transcode, clearly document that Moonirat V1 is a direct-upload/direct-playback architecture.
+
+⸻
+
+3. UPLOAD QUALITY AND LIMITS
+
+Audit the current upload limits against the actual Supabase Storage configuration.
+
+Verify:
+
+* maximum file size
+* accepted MIME types
+* thumbnail limits
+* filename/path safety
+* upload recovery
+* retry behavior
+* partial upload handling
+* duplicate/retry behavior
+
+Do not increase limits blindly.
+
+Use limits that are realistic for a controlled beta.
+
+If a creator attempts an unsupported format, provide a clear message explaining which format is accepted.
+
+⸻
+
+4. STORAGE VALIDATION
+
+Verify uploaded videos are stored correctly.
+
+For every test upload confirm:
+
+* Storage object exists
+* database row exists
+* stored path is correct
+* URL resolves
+* Content-Type is correct
+* HTTP byte ranges work
+* playback source remains valid
+* deleting the video removes the associated Storage objects
+
+Never leave orphaned paid Storage objects.
+
+⸻
+
+5. PLAYER QUALITY
+
+Validate the existing Moonirat player for:
+
+* startup
+* pause/play
+* seeking
+* buffering
+* resume
+* fullscreen
+* volume
+* mobile controls
+* orientation behavior
+* playback completion
+* invalid media
+* network interruption
+
+Do not replace the player unless necessary.
+
+⸻
+
+6. BROWSER COMPATIBILITY
+
+Test real supported environments where available:
+
+Desktop:
+
+* Chrome
+* Safari
+* Firefox
+
+Mobile:
+
+* iOS Safari
+* Android Chrome
+
+Test H.264/AAC MP4 specifically.
+
+Do NOT use a restricted test browser’s inability to decode H.264/AAC as proof that Moonirat’s video is broken.
+
+Record actual results.
+
+Use:
+
+CHROME_MP4:
+SAFARI_MP4:
+FIREFOX_MP4:
+IOS_SAFARI_MP4:
+ANDROID_CHROME_MP4:
+
+Each must be:
+
+PASS / WARN / FAIL / NOT_AVAILABLE
+
+⸻
+
+7. PLAYBACK PERFORMANCE
+
+Measure:
+
+* time to first frame where practical
+* buffering behavior
+* seeking response
+* startup on mobile networks
+* large-file behavior
+* repeated playback
+* navigation between videos
+
+Do not prematurely introduce HLS or transcoding.
+
+If performance is acceptable for V1 controlled beta:
+
+→ KEEP CURRENT ARCHITECTURE.
+
+If a genuine blocker is discovered:
+
+→ document the evidence and recommend the smallest architecture change required.
+
+Do not implement speculative infrastructure.
+
+⸻
+
+8. VIEW TRACKING REGRESSION
+
+Verify video quality changes do not break:
+
+* 3-second qualified view threshold
+* 24-hour cooldown
+* seeking/buffering resistance
+* authenticated views
+* anonymous views
+* correct video attribution
+
+A video must never receive a qualified view merely because the player loaded.
+
+⸻
+
+9. RESUME REGRESSION
+
+Verify:
+
+Video A → watch → leave → return → resume.
+
+Then:
+
+Video A → Video B → Video A
+
+Ensure each video’s position remains independent.
+
+⸻
+
+10. MOBILE DATA EXPERIENCE
+
+For the controlled beta, pay particular attention to mobile users.
+
+Check:
+
+* startup time
+* unnecessary downloads
+* buffering
+* repeated downloads
+* large files
+* mobile network behavior
+
+Do not automatically create multiple video qualities without evidence that V1 requires adaptive streaming.
+
+⸻
+
+11. CREATOR UX
+
+Make upload requirements obvious before the creator selects a file.
+
+Clearly communicate:
+
+Supported format:
+H.264/AAC MP4
+
+Maximum file size:
+Use the currently validated Supabase limit.
+
+Explain that Moonirat V1 preserves uploaded quality and does not automatically create alternate video formats unless the architecture later requires it.
+
+Do not make creators guess why an upload failed.
+
+⸻
+
+12. SECURITY
+
+Verify:
+
+* creators can only manage their own videos
+* viewers cannot modify video records
+* Storage policies remain correct
+* video deletion remains authorized
+* admin moderation remains authorized
+* service-role credentials never reach the browser
+
+Do not weaken RLS to solve playback problems.
+
+⸻
+
+13. PERFORMANCE RULE
+
+Do not optimize based on assumptions.
+
+Use actual evidence from:
+
+* browser testing
+* Storage behavior
+* network requests
+* file sizes
+* playback behavior
+* mobile testing
+
+Only make changes that improve measured V1 behavior.
+
+⸻
+
+14. FINAL REGRESSION
+
+Run:
+
+* TypeScript
+* production build
+* SSR
+* desktop smoke test
+* mobile smoke test
+* upload test
+* playback test
+* seeking test
+* resume test
+* view tracking test
+* deletion/storage cleanup test
+
+Confirm no new:
+
+401
+403
+404
+429
+500
+
+errors.
+
+⸻
+
+15. FINAL REPORT
+
+Create:
+
+MOONIRAT_V1_VIDEO_QUALITY_CERTIFICATION.md
+
+Include:
+
+VIDEO_UPLOAD:
+VIDEO_STORAGE:
+VIDEO_QUALITY:
+H264_AAC:
+AUDIO:
+BYTE_RANGE:
+SEEKING:
+BUFFERING:
+RESUME:
+VIEW_TRACKING:
+MOBILE_PLAYBACK:
+CHROME:
+SAFARI:
+FIREFOX:
+IOS_SAFARI:
+ANDROID_CHROME:
+STORAGE_CLEANUP:
+SECURITY:
+TYPECHECK:
+BUILD:
+SSR:
+PERFORMANCE:
+
+Use only:
+
+PASS
+WARN
+FAIL
+NOT_AVAILABLE
+
+Do not claim PASS without evidence.
+
+⸻
+
+IMPORTANT V1 RULE
+
+Moonirat is a creator-first music-video platform for BOTH creators and viewers.
+
+Creator experience matters:
+
+UPLOAD → PUBLISH → WATCH → DISCOVER → FOLLOW
+
+Viewer experience matters:
+
+SIGN UP → DISCOVER → WATCH → FOLLOW → PLAYLIST → FEEDBACK
+
+Protect both journeys.
+
+Do not let video infrastructure work intended to improve quality destabilize the existing controlled-beta system.
+
+When this certification is complete, STOP.
+
+Do not automatically add Chromecast, monetization, AI, comments, HLS, transcoding, or other new features.
+
+Return the evidence-based recommendation for whether Moonirat should:
+
+A. Continue controlled beta
+B. Fix identified playback issues first
+C. Begin wider beta preparation

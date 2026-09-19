@@ -1,0 +1,160 @@
+MOONIRAT V1 — CONTROLLED BETA READINESS CONTINUATION
+
+Continue the Moonirat V1 production readiness gate.
+
+IMPORTANT:
+
+Do NOT upgrade or change my Supabase plan.
+Do NOT create a new Supabase project.
+Do NOT provision another database.
+Do NOT add new product features.
+
+The Supabase Leaked Password Protection setting is currently unavailable/deferred because it may require a paid Supabase plan.
+
+Treat this as a documented launch-gate exception, NOT as a completed security control.
+
+Set:
+
+LEAKED_PASSWORD_PROTECTION: MANUAL_ACTION_REQUIRED
+
+Do not claim it is PASS.
+
+Continue with every other remaining Public Beta gate.
+
+1. SUPPORTED-BROWSER PLAYBACK
+
+Validate the existing H.264/AAC MP4 playback architecture on supported browsers/devices where available:
+
+* Chrome
+* Safari
+* Firefox
+* iOS Safari
+* Android Chrome
+
+Verify:
+
+* playback
+* seeking
+* buffering
+* resume
+* fullscreen
+* playback error handling
+* view threshold
+* HLS.js lazy loading when applicable
+* direct MP4 fallback
+
+If the restricted test browser cannot decode the valid MP4, document:
+
+MP4_COMPATIBILITY: BROWSER_LIMITATION
+
+Do not create permanent WebM media or add transcoding just to satisfy the restricted test environment.
+
+2. FEEDBACK JOURNEY
+
+Certify the existing feedback system end-to-end:
+
+Viewer:
+submit feedback → see confirmation → view submission/status
+
+Creator:
+submit feedback → see confirmation → view status
+
+Admin:
+receive feedback → filter → review → add notes → update status
+
+Verify RLS isolation and realtime behavior where already implemented.
+
+Do not expand the feedback feature.
+
+3. CREATOR JOURNEY
+
+Re-test:
+
+signup
+→ artist profile
+→ avatar
+→ video upload
+→ upload recovery
+→ video management
+→ dashboard
+→ analytics
+→ verification
+
+4. VIEWER/FOLLOWER JOURNEY
+
+Re-test:
+
+browse
+→ discover
+→ search
+→ artist
+→ watch
+→ follow
+→ playlist
+→ resume
+
+5. ADMIN SECURITY
+
+Verify:
+
+* ordinary users cannot access admin
+* creators cannot moderate videos
+* creators cannot modify other creators’ content
+* Storage policies remain secure
+* service-role secrets are never exposed
+* moderation actions remain audited
+
+6. FINAL BUILD
+
+Run:
+
+* TypeScript
+* production build
+* SSR validation
+* route validation
+* Supabase connectivity
+* RLS validation
+* Storage validation
+* browser regression
+
+Do not modify working systems unnecessarily.
+
+7. FINAL GATE
+
+Update:
+
+MOONIRAT_V1_FINAL_PRODUCTION_GATE.md
+
+Use:
+
+V1_STATUS:
+VIEW_TRACKING:
+UPLOAD_RECOVERY:
+STORAGE_CLEANUP:
+DISCOVERY_SCALE:
+TYPECHECK:
+BUILD:
+SSR:
+RLS_SECURITY:
+STORAGE_SECURITY:
+LEAKED_PASSWORD_PROTECTION:
+MP4_COMPATIBILITY:
+CREATOR_JOURNEY:
+VIEWER_JOURNEY:
+ADMIN_JOURNEY:
+FEEDBACK_JOURNEY:
+PUBLIC_BETA_READY:
+
+Do NOT set PUBLIC_BETA_READY = YES while a genuine security control remains unresolved.
+
+If everything else passes, report:
+
+V1_STATUS: CONDITIONAL_PASS
+LEAKED_PASSWORD_PROTECTION: MANUAL_ACTION_REQUIRED
+PUBLIC_BETA_READY: NO
+
+Then clearly identify that the remaining action is the Supabase Auth security setting.
+
+Do not recommend or implement additional features.
+
+The objective is to finish certification, not expand Moonirat V1.

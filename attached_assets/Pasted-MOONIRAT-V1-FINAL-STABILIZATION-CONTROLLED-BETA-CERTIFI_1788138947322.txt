@@ -1,0 +1,270 @@
+MOONIRAT V1 — FINAL STABILIZATION & CONTROLLED BETA CERTIFICATION
+
+You are working on Moonirat, a creator-first music-video platform serving BOTH creators/artists AND viewers/followers.
+
+Moonirat V1 scope is strictly:
+
+UPLOAD → DISCOVER → WATCH → FOLLOW
+
+The current production gate is:
+
+V1_STATUS: CONDITIONAL_PASS
+PUBLIC_BETA_READY: CONDITIONAL_PASS
+
+Viewer journey: PASS
+Creator journey: PASS
+Admin journey: PASS
+Feedback journey: PASS
+RLS/security/database/storage: PASS
+Typecheck/build/SSR/mobile: PASS
+Playback: MANUAL_ACTION_REQUIRED
+Supabase rate limiting: WARN
+Leaked Password Protection: MANUAL_ACTION_REQUIRED
+Performance: WARN
+
+IMPORTANT: This is a STABILIZATION phase, NOT a feature-development phase.
+
+DO NOT add:
+
+* monetization
+* Stripe
+* ads
+* comments
+* AI
+* recommendations powered by AI
+* microservices
+* unnecessary realtime features
+* permanent WebM derivatives
+* transcoding pipelines
+* HLS infrastructure unless required by an actual certified production failure
+* new social features
+* speculative database changes
+* a second backend
+* fake/demo/seed data presented as real production content
+
+Do not replace Supabase.
+Do not provision a new database.
+Do not change the existing architecture.
+Do not bypass RLS.
+Do not expose service-role credentials to the browser.
+
+PHASE 1 — REPOSITORY AND LIVE SUPABASE AUDIT
+
+Before changing anything:
+
+1. Search the entire repository.
+2. Inspect existing migrations.
+3. Inspect all routes and shared components.
+4. Inspect Supabase client configuration.
+5. Inspect RLS policies, grants, indexes, Storage policies, RPCs and triggers.
+6. Inspect package.json and build configuration.
+7. Inspect existing certification reports.
+8. Compare the actual implementation against the latest production-gate report.
+
+Do NOT assume previous agent claims are correct.
+
+Create:
+
+MOONIRAT_V1_STABILIZATION_AUDIT.md
+
+For every finding classify:
+
+PASS
+WARN
+FAIL
+MANUAL_ACTION_REQUIRED
+
+PHASE 2 — PLAYBACK CERTIFICATION
+
+Do NOT change video architecture merely because a restricted test browser cannot decode H.264/AAC.
+
+Verify:
+
+* MP4 MIME type
+* H.264 compatibility
+* AAC compatibility
+* HTTP range requests
+* seeking
+* buffering behavior
+* resume playback
+* invalid media handling
+* mobile controls
+* fullscreen
+* playback error handling
+
+Create a browser certification matrix for:
+
+* Chrome desktop
+* Firefox desktop
+* Safari desktop
+* iOS Safari
+* Android Chrome
+
+If the current environment cannot perform a browser test, mark it MANUAL_ACTION_REQUIRED.
+
+Never convert this into a fake PASS.
+
+PHASE 3 — PERFORMANCE STABILIZATION
+
+Measure the existing application before optimizing.
+
+Inspect:
+
+* initial bundle size
+* route chunks
+* unnecessary client-side work
+* database query limits
+* N+1 queries
+* image loading
+* video loading
+* discovery pagination
+* search pagination
+* React hydration warnings
+* unnecessary re-renders
+* Supabase request duplication
+
+Make only safe, evidence-based optimizations.
+
+Do not rewrite the architecture.
+
+PHASE 4 — SUPABASE RATE-LIMIT VALIDATION
+
+Investigate the existing WARN.
+
+Determine whether HTTP 429 responses originate from:
+
+* actual application request duplication
+* repeated certification testing
+* Supabase Auth limits
+* retry behavior
+* browser behavior
+
+Ensure the application:
+
+* sends one signup request per intentional submission
+* disables the submit action while pending
+* does not automatically retry authentication requests
+* displays a truthful error when rate-limited
+* never fakes successful signup
+
+Do not bypass Supabase security controls.
+
+PHASE 5 — SECURITY FINAL CHECK
+
+Verify:
+
+* RLS enabled
+* correct ownership policies
+* admin authorization
+* Storage policies
+* service-role isolation
+* feedback ownership
+* video ownership
+* playlist ownership
+* watch-history isolation
+* moderation authorization
+* verification authorization
+* no secrets exposed to client bundles
+
+Do not mark Leaked Password Protection PASS unless it is actually enabled and verified in the live Supabase project.
+
+If unavailable because of the current Supabase plan/configuration, record:
+
+LEAKED_PASSWORD_PROTECTION: MANUAL_ACTION_REQUIRED
+
+Do not weaken authentication to obtain a PASS.
+
+PHASE 6 — CONTROLLED BETA READINESS
+
+After stabilization, run the complete end-to-end journeys:
+
+VIEWER:
+signup/login → discover → search → watch → seek → resume → follow creator → playlist → feedback → logout
+
+CREATOR:
+signup/login → create artist profile → upload → upload recovery → publish → view dashboard → analytics → verification → edit content → feedback
+
+ADMIN:
+login → verify admin authorization → review creators → approve/reject verification → moderate videos → review feedback → inspect audit trail
+
+For every journey verify actual persistence in Supabase.
+
+No mock state.
+No local-only success.
+No fake counters.
+No simulated backend responses.
+
+PHASE 7 — CONTROLLED BETA SAFETY
+
+Before recommending beta:
+
+* verify rollback/recovery procedures
+* verify Storage cleanup
+* verify deleted-content behavior
+* verify moderation behavior
+* verify invalid media behavior
+* verify rate-limit handling
+* verify error states
+* verify mobile navigation
+* verify accessibility basics
+* verify privacy boundaries
+* verify that beta users cannot access admin functionality
+
+PHASE 8 — FINAL CERTIFICATION
+
+Create:
+
+MOONIRAT_V1_FINAL_STABILIZATION_REPORT.md
+
+Use these exact fields:
+
+V1_STATUS:
+PUBLIC_BETA_READY:
+VIEWER_JOURNEY:
+CREATOR_JOURNEY:
+ADMIN_JOURNEY:
+FEEDBACK_JOURNEY:
+AUTH:
+RLS:
+DATABASE:
+STORAGE:
+VIEW_TRACKING:
+UPLOAD_RECOVERY:
+STORAGE_CLEANUP:
+PLAYBACK:
+DISCOVERY_SCALE:
+SEARCH_SCALE:
+MOBILE:
+PERFORMANCE:
+TYPECHECK:
+BUILD:
+SSR:
+SUPABASE_RATE_LIMITING:
+LEAKED_PASSWORD_PROTECTION:
+MP4_BROWSER_MATRIX:
+P0_BLOCKERS:
+P1_BLOCKERS:
+WARNINGS:
+MANUAL_ACTIONS:
+FINAL_RECOMMENDATION:
+
+Rules:
+
+PASS only means actually verified.
+WARN means functional but needs monitoring.
+MANUAL_ACTION_REQUIRED means the environment or external Supabase setting prevents verification.
+FAIL means a real product/security defect exists.
+
+Do not hide failures.
+Do not manufacture evidence.
+Do not claim Public Beta Ready if required conditions remain unverified.
+
+FINAL DECISION:
+
+If all product-code P0/P1 blockers pass and only documented environmental/manual items remain, recommend a SMALL CONTROLLED BETA rather than a wide public launch.
+
+After the report is complete, STOP.
+
+Do not begin V1.1 feature development.
+
+Moonirat’s priority is now reliability, real-world beta validation, creator acquisition through actual usage, and learning from real viewers and creators.

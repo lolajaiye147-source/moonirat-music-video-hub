@@ -1,0 +1,240 @@
+MOONIRAT V1 — REAL END-TO-END USER JOURNEY CERTIFICATION
+
+Act as the Principal QA Engineer for Moonirat V1.
+
+The following prerequisites are now complete:
+
+- Persistent application runtime available.
+- Supabase environment configured securely.
+- Live Supabase migration applied.
+- Real test users created through supported Auth APIs.
+- Real test artists created.
+- Real videos uploaded to Supabase Storage.
+- Test data populated.
+- Security policies verified.
+
+Now perform REAL End-to-End validation through the actual Moonirat application.
+
+DO NOT use mock data.
+
+DO NOT bypass the UI for the final journey validation.
+
+DO NOT mark anything PASS unless the actual application behavior is verified.
+
+================================
+GUEST JOURNEY
+================================
+
+Test:
+
+Home
+→ Discover
+→ Trending
+→ New Releases
+→ Search
+→ Artist Profile
+→ Video Detail
+→ Real Video Playback
+→ Up Next
+→ Auto Advance
+→ Sign Up
+
+Verify:
+
+- Real Supabase data
+- Correct navigation
+- Loading states
+- Empty states
+- Error states
+- Playback
+- Authentication transition
+
+================================
+AUTHENTICATED JOURNEY
+================================
+
+Test:
+
+Sign In
+→ Profile
+→ Save Profile
+→ Follow Artist
+→ Upload Video
+→ Verify Storage
+→ Verify Database
+→ Open Uploaded Video
+→ Play Video
+→ View Tracking
+→ Add To Playlist
+→ Reload
+→ Verify Persistence
+→ Watch History
+→ Resume Playback
+→ Discover
+→ Search
+→ Analytics
+→ Sign Out
+
+================================
+DATA PERSISTENCE
+================================
+
+For every mutation verify:
+
+UI action
+→ API request
+→ Supabase operation
+→ database/storage confirmation
+→ refreshed UI
+
+Test persistence after:
+
+- page reload
+- navigation away
+- sign out/sign in
+- reopening the relevant page
+
+================================
+RLS
+================================
+
+Attempt legitimate and unauthorized operations.
+
+Verify:
+
+User A cannot modify User B's:
+
+- profile
+- playlist
+- playlist items
+- watch history
+- protected content
+
+Artist A cannot modify Artist B's videos.
+
+Do not weaken RLS if something fails.
+
+Fix authorization correctly.
+
+================================
+VIDEO
+================================
+
+Verify:
+
+- Real video source
+- HLS playback where applicable
+- Play/pause
+- Seeking
+- Fullscreen
+- Resume
+- View tracking
+- Auto Advance
+- Up Next
+- Mobile playback
+
+================================
+DISCOVER
+================================
+
+Verify:
+
+- Trending
+- Today
+- This Week
+- This Month
+- New Releases
+- Rising Artists
+- Followed artists
+- Search
+- Genre filtering
+- Afrobeats
+- Amapiano
+- Global genres
+- Infinite scroll
+- Empty states
+
+================================
+RESPONSIVE
+================================
+
+Test:
+
+- Mobile
+- Tablet
+- Desktop
+
+Verify:
+
+- Bottom navigation
+- Video player
+- Discover sections
+- Artist pages
+- Upload
+- Profile
+- Playlists
+
+================================
+FINAL BUILD
+================================
+
+Run:
+
+bun run typecheck
+bun run build
+
+If the environment kills either command:
+
+- Record it as an infrastructure limitation.
+- Do not invent a code failure.
+- Do not claim PASS.
+
+================================
+FINAL REPORT
+================================
+
+Provide a table:
+
+Guest Journey
+Authenticated Journey
+Authentication
+Profile
+Follow
+Upload
+Storage
+Playback
+View Tracking
+Playlist
+Watch History
+Discover
+Search
+Analytics
+RLS
+Security
+Mobile
+Typecheck
+Build
+
+Each must be:
+
+PASS
+FAIL
+BLOCKED
+
+For every FAIL:
+
+- Root cause
+- Fix
+- Retest result
+
+For every BLOCKED:
+
+- Exact reason
+- Required environment change
+
+Final status:
+
+MOONIRAT V1
+GO / NO-GO
+
+Only issue GO if the real journeys have actually been verified.

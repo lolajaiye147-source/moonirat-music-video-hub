@@ -1,0 +1,208 @@
+MOONIRAT V1 — CONTROLLED BETA MONITORING PASS
+
+Moonirat V1 is now frozen and the controlled-beta operating documentation has been completed.
+
+Existing documents:
+
+MOONIRAT_V1_CONTROLLED_BETA_FREEZE.md
+MOONIRAT_V1_CONTROLLED_BETA_OPERATIONS.md
+MOONIRAT_V1_BETA_METRICS.md
+MOONIRAT_V1_BETA_ISSUE_LOG.md
+
+Current status:
+
+V1_STATUS: CONDITIONAL_PASS
+PUBLIC_BETA_READY: CONDITIONAL_PASS
+FINAL_RECOMMENDATION: CONTROLLED_BETA
+
+Cohort:
+
+CREATORS: 5–15
+VIEWERS/FOLLOWERS: 20–50
+
+IMPORTANT — DO NOT CHANGE THE PRODUCT.
+
+This is a monitoring and evidence-collection task only.
+
+DO NOT:
+
+* add features
+* redesign UI
+* change the database architecture
+* add another backend
+* add monetization
+* add ads
+* add AI
+* add comments
+* add microservices
+* add transcoding
+* add WebM derivatives
+* replace Supabase
+* modify the validated H.264/AAC playback strategy
+* introduce speculative analytics infrastructure
+
+The V1 freeze remains active.
+
+TASK 1 — VERIFY FROZEN STATE
+
+Confirm that the application remains unchanged from the certified V1 state.
+
+Check:
+
+* Viewer journey
+* Creator journey
+* Admin journey
+* Feedback journey
+* Authentication
+* RLS
+* Storage
+* Upload recovery
+* View tracking
+* Discovery
+* Search
+* Mobile
+* SSR
+* Typecheck
+* Production build
+
+Do not modify anything merely because an improvement is possible.
+
+TASK 2 — BETA EVIDENCE
+
+Use real beta activity when available.
+
+Do not fabricate users, videos, views, follows, feedback, or metrics.
+
+Track only actual observations.
+
+If there is insufficient activity, record:
+
+NOT_ENOUGH_DATA
+
+TASK 3 — MONITOR CORE JOURNEYS
+
+VIEWER:
+
+Signup/Login
+→ Discover
+→ Search
+→ Watch
+→ Follow
+→ Playlist
+→ Feedback
+
+CREATOR:
+
+Signup/Login
+→ Create Artist Profile
+→ Upload
+→ Publish
+→ Dashboard
+→ Analytics
+→ Verification
+→ Feedback
+
+ADMIN:
+
+Login
+→ Review creators
+→ Moderate videos
+→ Review feedback
+→ Audit activity
+
+TASK 4 — ISSUE TRIAGE
+
+Use:
+
+P0 = security, data loss, or platform unusable
+P1 = core journey broken
+P2 = significant usability/reliability issue
+P3 = cosmetic/minor issue
+
+Only P0/P1 issues justify immediate engineering intervention during the controlled beta.
+
+P2/P3 issues should be recorded in the issue log unless they create a real blocker.
+
+TASK 5 — REMAINING CONDITIONS
+
+Continue monitoring:
+
+LEAKED_PASSWORD_PROTECTION
+MP4_BROWSER_MATRIX
+SUPABASE_RATE_LIMITING
+PERFORMANCE
+HYDRATION_WARNINGS
+LOVABLE_SCAFFOLDING
+
+Never convert MANUAL_ACTION_REQUIRED or WARN into PASS without actual evidence.
+
+TASK 6 — UPDATE DOCUMENTATION
+
+Update:
+
+MOONIRAT_V1_BETA_METRICS.md
+
+with real observations only.
+
+Update:
+
+MOONIRAT_V1_BETA_ISSUE_LOG.md
+
+only when an actual issue is discovered.
+
+Do not create artificial test data simply to make metrics appear populated.
+
+TASK 7 — ENGINEERING ESCALATION
+
+If a P0 or P1 issue is discovered:
+
+STOP.
+
+Do not implement an unrelated fix.
+
+Report:
+
+* exact problem
+* affected journey
+* severity
+* reproduction
+* affected users
+* evidence
+* recommended fix
+
+Wait for authorization before modifying the frozen V1.
+
+If no P0/P1 issues exist:
+
+STOP WITHOUT CODE CHANGES.
+
+TASK 8 — BETA EXIT
+
+Do not create a final beta exit recommendation yet unless sufficient real beta evidence exists.
+
+When sufficient real usage has accumulated, prepare:
+
+MOONIRAT_V1_CONTROLLED_BETA_EXIT_REPORT.md
+
+Possible outcomes:
+
+EXTEND_CONTROLLED_BETA
+READY_FOR_WIDER_BETA
+RETURN_TO_STABILIZATION
+READY_FOR_PUBLIC_LAUNCH
+
+FINAL RULE:
+
+Moonirat V1 is currently in controlled product validation.
+
+The priority is NOT feature development.
+
+The priority is learning from real creators and real viewers.
+
+Observe.
+Measure.
+Record.
+Fix only genuine blockers.
+Do not expand scope.
+
+STOP when monitoring and documentation are complete.

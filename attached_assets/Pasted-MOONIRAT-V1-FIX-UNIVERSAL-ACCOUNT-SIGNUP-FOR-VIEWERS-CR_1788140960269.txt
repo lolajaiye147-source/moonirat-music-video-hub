@@ -1,0 +1,289 @@
+MOONIRAT V1 — FIX UNIVERSAL ACCOUNT SIGNUP FOR VIEWERS + CREATORS
+
+The current signup screen incorrectly labels the account identity field as “Username” with the placeholder “your_artist_name”.
+
+This is incorrect for Moonirat’s product vision.
+
+Moonirat is a music video platform for BOTH:
+
+1. Viewers / fans / followers
+2. Creators / artists
+
+Every person should first create a normal Moonirat user account. Becoming an artist is a separate optional journey.
+
+OBJECTIVE
+
+Redesign the authentication/signup flow so that any viewer, follower, or creator can create a Moonirat account without being treated as an artist.
+
+Signup should use:
+
+Display name
+Placeholder:
+Your name
+
+Email
+Placeholder:
+you@example.com
+
+Password
+
+Confirm password
+
+Do NOT use:
+
+* “Artist name”
+* “Your artist name”
+* Artist-specific wording
+* Artist-only validation during normal account creation
+
+ACCOUNT MODEL
+
+A newly registered user is a normal Moonirat user.
+
+They are NOT automatically an artist.
+
+After signup:
+
+Viewer / Fan journey
+
+Sign up
+→ Home
+→ Discover
+→ Search
+→ Watch videos
+→ Follow artists
+→ Create playlists
+→ Manage profile
+→ Submit feedback
+
+Creator journey
+
+Sign up
+→ Home
+→ Choose “Become a Creator” / “Create Artist Profile”
+→ Complete artist profile
+→ Upload videos
+→ Creator Dashboard
+→ Analytics
+→ Verification
+
+Do not force viewers to create an artist profile.
+
+DATABASE / SUPABASE
+
+Use the existing Moonirat Supabase architecture.
+
+Do NOT:
+
+* create another database
+* introduce another authentication provider
+* create fake accounts
+* create an artist row automatically for every signup
+* weaken RLS
+* expose the service-role key
+* modify unrelated production tables unnecessarily
+
+Use the existing auth.users and profiles architecture.
+
+The normal signup should create the user’s authentication account and corresponding normal profile according to the existing Moonirat profile architecture.
+
+Artist creation must remain a separate explicit action.
+
+PROFILE TERMINOLOGY
+
+Review the UI across Moonirat for places where a normal user is incorrectly called:
+
+* Artist
+* Creator
+* Artist name
+* Stage name
+
+Replace those only where they incorrectly describe a normal account.
+
+Keep artist-specific terminology where the user is actually inside the creator/artist journey.
+
+For example:
+
+Normal account:
+Display name
+
+Artist profile:
+Artist name / Stage name
+
+This distinction is important.
+
+AUTH PAGE UX
+
+Update the signup page so the heading remains welcoming to everyone.
+
+Example:
+
+Join Moonirat
+
+Create your account and start discovering music.
+
+Fields:
+
+Display name
+Your name
+
+Email
+you@example.com
+
+Password
+Create a password
+
+Confirm password
+Confirm your password
+
+CTA:
+
+Create account
+
+After successful signup, show the correct email-verification/session state based on the existing Supabase configuration.
+
+Do not fake successful registration.
+
+LOGIN
+
+The login screen should also be universal.
+
+Do not ask for:
+
+* Artist name
+* Stage name
+* Creator username
+
+Login should use the existing email/password authentication flow.
+
+ARTIST CREATION
+
+Keep artist creation separate.
+
+When an authenticated user chooses:
+
+Become a Creator
+
+they should enter the artist-specific information there, such as:
+
+* Artist name
+* Stage name
+* Genre
+* Bio
+* Country
+* Artist profile information
+* Avatar/banner where applicable
+
+Do not put these fields into ordinary account signup.
+
+USERNAME / DISPLAY NAME
+
+Before changing database columns, inspect the existing schema and code.
+
+If the existing profile field is called username, determine whether it is currently being used as a generic user identity or incorrectly treated as an artist name.
+
+Prefer a safe compatibility approach rather than a destructive schema change.
+
+Do NOT rename/drop a production column unless absolutely necessary.
+
+If the database already supports a suitable display-name field, use it.
+
+VALIDATION
+
+Test all of the following:
+
+Viewer
+
+Create a brand-new account using:
+
+Display name:
+Beta Viewer
+
+Email:
+unique test email
+
+Verify:
+
+* signup succeeds
+* profile is created
+* user reaches authenticated experience
+* user is NOT automatically an artist
+* viewer can discover videos
+* viewer can follow an artist
+* viewer can create playlists
+* viewer can submit feedback
+
+Creator
+
+Using another disposable test account:
+
+* create normal account
+* choose Become a Creator
+* create artist profile
+* verify artist profile is created correctly
+* upload journey remains functional
+* creator dashboard remains functional
+
+SECURITY REGRESSION
+
+Confirm:
+
+* normal users cannot access admin
+* normal users cannot create admin roles
+* RLS remains enabled
+* service-role key remains server-only
+* viewers cannot modify another user’s profile
+* viewers cannot modify another artist’s profile
+* artist creation remains authorized to the authenticated user
+
+RESPONSIVE UI
+
+Check the signup screen on:
+
+* desktop
+* 375×812 mobile
+
+Make sure:
+
+* fields are readable
+* keyboard does not hide the CTA
+* no horizontal overflow
+* password controls remain usable
+* validation messages are clear
+
+IMPORTANT V1 RULE
+
+Do not add new product features.
+
+This is a correctness and UX fix to the existing Moonirat V1 authentication model.
+
+The core Moonirat model must remain:
+
+One Moonirat account → Viewer by default → Optional Creator/Artist profile
+
+CERTIFICATION
+
+After implementation, create/update:
+
+MOONIRAT_V1_AUTH_CERTIFICATION.md
+
+Record:
+
+AUTH_SIGNUP: PASS/WARN/FAIL
+VIEWER_ACCOUNT: PASS/WARN/FAIL
+CREATOR_ACCOUNT: PASS/WARN/FAIL
+PROFILE_CREATION: PASS/WARN/FAIL
+ARTIST_CREATION: PASS/WARN/FAIL
+LOGIN: PASS/WARN/FAIL
+RLS: PASS/WARN/FAIL
+ADMIN_PROTECTION: PASS/WARN/FAIL
+MOBILE_AUTH_UI: PASS/WARN/FAIL
+TYPECHECK: PASS/WARN/FAIL
+BUILD: PASS/WARN/FAIL
+SSR: PASS/WARN/FAIL
+
+Also document exactly what changed and any remaining manual actions.
+
+Do not declare PASS based only on compilation. Perform the actual signup and creator/viewer journey validation.
+
+Do not modify the frozen V1 architecture or introduce unrelated features.

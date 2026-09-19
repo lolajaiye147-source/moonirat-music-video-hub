@@ -1,0 +1,36 @@
+kind = "web"
+previewPath = "/"
+title = "Moonirat V1"
+description = "A Supabase-backed music video hub where guests discover artists and videos, while signed-in users manage profiles, follows, playlists, uploads, watch history, and playback."
+version = "1.0.0"
+id = "artifacts/moonirat"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19903
+
+[services.development]
+run = "pnpm --filter @workspace/moonirat run dev"
+
+[services.production]
+
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/moonirat", "run", "build" ]
+
+[services.production.build.env]
+BASE_PATH = "/"
+NODE_ENV = "production"
+
+[services.production.run]
+args = [ "node", "--enable-source-maps", "artifacts/moonirat/dist/server/index.mjs" ]
+
+[services.production.run.env]
+BASE_PATH = "/"
+NODE_ENV = "production"
+PORT = "19903"
+
+[services.env]
+PORT = "19903"
+BASE_PATH = "/"

@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "shDfZcF1h6z6CjPe1L1Od"
+uri = "file://MOONIRAT_V1_FINAL_CONTROLLED_BETA_GATE.md"
+type = "text"
+title = "Moonirat V1 Final Controlled Beta Gate"
+description = "Final readiness decision, evidence, security findings, warnings, and manual launch actions."
+logical_id = "b1de4a12-869c-4f16-bd4b-d42dbd83ac9f"
+content_hash = "sha256:1257d538d0993a67ff1d35d194aa22dc07502b7da69cabcfa8f4ae6430fd9dc9"
+size = 5775
+mtime_ms = 1788137795253
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:41efbaeb-c1da-45f5-810e-393e3d18794b/b1de4a12-869c-4f16-bd4b-d42dbd83ac9f/02add37b-681f-40c3-ad1c-f0985ede422f"
+storage_version_token = "1788137828739228"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "jUWZ09yaMuEij2oTgoznC"
+uri = "file://MOONIRAT_V1_BETA_FEEDBACK_CERTIFICATION.md"
+type = "text"
+title = "Moonirat V1 Beta Feedback Certification"
+description = "Certification with the exact requested feedback journey status fields and validation evidence."
+logical_id = "23786b1f-f04a-4fbe-9540-148945ca8369"
+content_hash = "sha256:b82c30c4aa6b1e9846aa7e2f423cecf105ddc4d43e28ff671d697322c6dc4942"
+size = 3121
+mtime_ms = 1788138434177
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:41efbaeb-c1da-45f5-810e-393e3d18794b/23786b1f-f04a-4fbe-9540-148945ca8369/7beb91a7-1a8b-4796-af8e-d9fc47f3a2b6"
+storage_version_token = "1788138438290834"
+content_type = "text/markdown"

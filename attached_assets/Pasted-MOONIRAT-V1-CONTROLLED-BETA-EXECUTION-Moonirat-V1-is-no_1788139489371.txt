@@ -1,0 +1,208 @@
+MOONIRAT V1 — CONTROLLED BETA EXECUTION
+
+Moonirat V1 is now FROZEN after the final stabilization and controlled-beta readiness audits.
+
+Current status:
+
+V1_STATUS: CONDITIONAL_PASS
+PUBLIC_BETA_READY: CONDITIONAL_PASS
+FINAL_RECOMMENDATION: CONDITIONAL_PASS
+
+The following journeys are certified:
+
+VIEWER_JOURNEY: PASS
+CREATOR_JOURNEY: PASS
+ADMIN_JOURNEY: PASS
+FEEDBACK_JOURNEY: PASS
+RLS_SECURITY: PASS
+DATABASE: PASS
+STORAGE: PASS
+VIEW_TRACKING: PASS
+UPLOAD_RECOVERY: PASS
+DISCOVERY_SCALE: PASS
+SEARCH_SCALE: PASS
+MOBILE: PASS
+TYPECHECK: PASS
+BUILD: PASS
+SSR: PASS
+
+Remaining documented conditions:
+
+LEAKED_PASSWORD_PROTECTION: MANUAL_ACTION_REQUIRED
+MP4_BROWSER_MATRIX: MANUAL_ACTION_REQUIRED
+SUPABASE_RATE_LIMITING: WARN
+PERFORMANCE: WARN
+HYDRATION_WARNINGS: NON_BLOCKING
+LOVABLE_SCAFFOLDING: DEFERRED
+
+IMPORTANT:
+
+DO NOT add new product features.
+
+DO NOT modify the existing architecture.
+
+DO NOT add monetization, ads, AI, comments, Stripe, recommendation engines, microservices, transcoding, WebM derivatives, or unnecessary infrastructure.
+
+DO NOT replace Supabase.
+
+DO NOT provision another database.
+
+DO NOT change the validated H.264/AAC V1 playback strategy solely because a restricted testing browser cannot decode it.
+
+DO NOT manufacture PASS results.
+
+The purpose of this task is BETA OBSERVATION, not feature development.
+
+1. Confirm the current application remains in the frozen V1 state.
+2. Do not modify application code unless a real P0/P1 production defect is discovered.
+3. Create:
+
+MOONIRAT_V1_CONTROLLED_BETA_OPERATIONS.md
+
+Document the beta operating procedure for a small invited cohort of creators, viewers, and followers.
+
+4. Define beta cohorts:
+
+CREATORS:
+5–15 initial creators
+
+VIEWERS/FOLLOWERS:
+20–50 initial users
+
+Keep access controlled and invitation-based where the existing application supports it.
+
+5. Define the core journeys to observe:
+
+VIEWER:
+Signup/Login → Discover → Search → Watch → Follow → Playlist → Feedback
+
+CREATOR:
+Signup/Login → Create Artist Profile → Upload → Publish → Dashboard → Analytics → Verification → Feedback
+
+ADMIN:
+Login → Review creators → Moderate videos → Review feedback → Audit activity
+
+6. Track real metrics only.
+
+Do not invent metrics.
+
+Track where available:
+
+* invited users
+* activated users
+* returning users
+* creators onboarded
+* creators uploading
+* repeat creators
+* videos uploaded
+* videos published
+* qualified views
+* follows
+* playlists
+* feedback submissions
+* verification applications
+* upload failures
+* playback failures
+* authentication failures
+* HTTP errors
+
+If insufficient data exists, report:
+
+NOT_ENOUGH_DATA
+
+7. Establish issue severity:
+
+P0:
+Security issue, data loss, or application unusable.
+
+P1:
+Core viewer/creator journey broken.
+
+P2:
+Important usability/reliability problem.
+
+P3:
+Minor/cosmetic issue.
+
+Only P0/P1 issues should trigger immediate engineering work during the controlled beta.
+
+P2/P3 issues should be collected and reviewed rather than immediately turning them into new features.
+
+8. Monitor the remaining conditions:
+
+LEAKED_PASSWORD_PROTECTION:
+Keep MANUAL_ACTION_REQUIRED until actually enabled and verified in Supabase.
+
+MP4_BROWSER_MATRIX:
+Record real Chrome, Safari, Firefox, iOS Safari and Android Chrome results when available.
+
+SUPABASE_RATE_LIMITING:
+Determine whether HTTP 429 occurs during normal individual usage rather than repeated testing.
+
+PERFORMANCE:
+Measure actual beta behavior before making architectural changes.
+
+9. Create:
+
+MOONIRAT_V1_BETA_ISSUE_LOG.md
+
+Every discovered issue must contain:
+
+DATE
+SEVERITY
+USER_TYPE
+JOURNEY
+DESCRIPTION
+REPRODUCTION
+IMPACT
+STATUS
+FIX_REQUIRED
+
+10. Create:
+
+MOONIRAT_V1_BETA_METRICS.md
+
+Keep this document updated only with real observed data.
+
+11. Do NOT implement speculative fixes.
+
+If a real P0/P1 issue is discovered:
+
+STOP and report the exact issue before making unrelated changes.
+
+If no P0/P1 issue is discovered:
+
+DO NOT modify the application.
+
+12. At the end of the beta observation period, generate:
+
+MOONIRAT_V1_CONTROLLED_BETA_EXIT_REPORT.md
+
+Possible recommendations:
+
+EXTEND_CONTROLLED_BETA
+READY_FOR_WIDER_BETA
+RETURN_TO_STABILIZATION
+READY_FOR_PUBLIC_LAUNCH
+
+Do not recommend wide public launch based solely on code quality.
+
+Require evidence from real creators and viewers.
+
+FINAL RULE:
+
+Moonirat V1 is now in PRODUCT VALIDATION.
+
+The objective is to prove that:
+
+VIEWERS WATCH
+VIEWERS RETURN
+VIEWERS FOLLOW
+CREATORS UPLOAD
+CREATORS RETURN
+THE PLATFORM REMAINS RELIABLE
+USERS PROVIDE USEFUL FEEDBACK
+
+Do not build for the sake of building.
+
+Observe real usage first.

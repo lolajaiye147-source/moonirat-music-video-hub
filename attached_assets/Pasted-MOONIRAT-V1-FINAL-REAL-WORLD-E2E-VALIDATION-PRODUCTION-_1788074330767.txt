@@ -1,0 +1,693 @@
+MOONIRAT V1 — FINAL REAL-WORLD E2E VALIDATION & PRODUCTION GATE
+
+Moonirat is a creator-first music-video platform serving BOTH:
+
+* Creators / Artists
+* Viewers / Fans / Followers
+
+The core V1 loop is:
+
+Upload → Discover → Watch → Follow
+
+Do NOT add new product features during this task.
+
+Do NOT start V1.1.
+
+Do NOT add monetization, ads, AI, comments, microservices, or another database.
+
+The objective is to prove that the existing Moonirat V1 actually works end-to-end with the live Supabase project.
+
+⸻
+
+1. FIRST: AUDIT BEFORE CHANGING CODE
+
+Search the entire active repository.
+
+Confirm:
+
+* production frontend architecture
+* active routes
+* Supabase client
+* Supabase migrations
+* storage buckets
+* RLS policies
+* RPC functions
+* authentication
+* realtime subscriptions
+* video player
+* upload implementation
+* playlists
+* likes
+* follows
+* notifications
+* verification
+* feedback
+* creator analytics
+* admin functionality
+
+Treat GitHub as the source of truth.
+
+Treat /archive as reference-only.
+
+Do NOT import archived code.
+
+Do NOT provision another database.
+
+Do NOT replace the existing Supabase project.
+
+Do NOT rewrite working architecture unnecessarily.
+
+⸻
+
+2. VERIFY LIVE SUPABASE
+
+The Supabase MCP is connected.
+
+Inspect the LIVE Moonirat Supabase project before making database changes.
+
+Verify:
+
+* project is healthy
+* migrations are applied
+* required tables exist
+* required columns exist
+* indexes exist
+* foreign keys exist
+* RLS is enabled
+* storage buckets exist
+* storage policies exist
+* required RPC functions exist
+* realtime configuration exists where required
+
+Do NOT create duplicate tables or migrations.
+
+If something is missing, create the smallest safe migration required.
+
+⸻
+
+3. AUTH SECURITY
+
+Verify authentication with:
+
+Viewer account
+
+* sign up
+* sign in
+* sign out
+* session persistence
+* refresh
+* protected routes
+
+Creator account
+
+* same checks
+
+Admin account
+
+* same checks
+
+Ensure missing admin role is handled as a normal authorization result.
+
+No 406 noise caused by expected zero-row role lookups.
+
+Never expose:
+
+SUPABASE_SERVICE_ROLE_KEY
+
+to browser/client code.
+
+Check the repository and built client for accidental secret exposure.
+
+⸻
+
+4. VIEWER E2E JOURNEY
+
+Test the real viewer journey:
+
+Sign up
+↓
+Sign in
+↓
+Home
+↓
+Discover
+↓
+Search
+↓
+Open video
+↓
+Play video
+↓
+Watch long enough for view tracking
+↓
+Like
+↓
+Follow artist
+↓
+Save to playlist
+↓
+Open playlist
+↓
+Open artist profile
+↓
+Notifications
+↓
+Feedback
+↓
+Refresh
+↓
+Verify persistence
+
+Every important mutation must be confirmed against the database.
+
+Do NOT accept local state as proof of persistence.
+
+After every important action:
+
+1. perform the action
+2. inspect the database
+3. refresh the application
+4. verify the state remains correct
+
+⸻
+
+5. CREATOR E2E JOURNEY
+
+Test:
+
+Sign up
+↓
+Create artist profile
+↓
+Complete artist information
+↓
+Upload thumbnail
+↓
+Upload real video
+↓
+Observe upload progress
+↓
+Create database video record
+↓
+Publish
+↓
+Open public artist page
+↓
+Open video
+↓
+Play video
+↓
+Verify view tracking
+↓
+Edit video
+↓
+Verify edit persistence
+↓
+View analytics
+↓
+Unpublish/delete where supported
+↓
+Apply for verification
+
+Verify every database mutation.
+
+⸻
+
+6. REAL VIDEO VALIDATION
+
+This is a critical V1 gate.
+
+Test actual uploaded media.
+
+Verify:
+
+* correct video URL comes from Supabase
+* no hardcoded media URL
+* player does not depend on stale memoized source state
+* direct video playback works
+* HLS remains optional if supported
+* missing media URL has a graceful error
+* invalid media URL has a graceful error
+* retry works
+* buffering state works
+* play/pause works
+* seeking works
+* fullscreen works
+* mobile playback works
+* iOS/Safari-compatible behavior is preserved
+* player does not crash when video data is temporarily unavailable
+
+Verify that video playback still works after page refresh.
+
+⸻
+
+7. VIDEO VIEW TRACKING
+
+Verify the actual view-count implementation.
+
+Confirm:
+
+* views are not counted immediately on page render
+* the configured watch threshold is respected
+* duplicate/spam protection works
+* refresh does not incorrectly inflate views
+* video_views receives the expected row/event
+* creator analytics reflects real views
+
+Do not rely on the UI counter alone.
+
+⸻
+
+8. LIKES
+
+Verify:
+
+Like
+→ database row created
+
+Unlike
+→ database row removed
+
+Refresh
+→ correct state remains
+
+Test:
+
+* authenticated viewer
+* repeated clicks
+* duplicate prevention
+* correct count
+
+A toast or local state is NOT proof of success.
+
+⸻
+
+9. FOLLOWS
+
+Verify:
+
+Follow artist
+→ follows table updated
+
+Unfollow
+→ follows row removed
+
+Refresh
+→ correct state remains
+
+Verify follower counts are derived from real data.
+
+Ensure users cannot manipulate another user’s follows.
+
+⸻
+
+10. PLAYLISTS
+
+Verify:
+
+* create playlist
+* rename playlist
+* delete playlist
+* add video
+* remove video
+* duplicate prevention
+* ownership enforcement
+* persistence after refresh
+
+A viewer must only be able to modify their own playlists.
+
+⸻
+
+11. ARTIST PROFILE
+
+Verify:
+
+* profile creation
+* profile editing
+* avatar
+* bio
+* display name
+* artist slug
+* public profile
+* follower count
+* video count
+* verified badge
+* featured status
+
+No fake statistics.
+
+⸻
+
+12. VERIFICATION SECURITY
+
+Test artist:
+
+* apply
+* pending
+* rejected
+* more information
+* reapply
+* approved
+
+Test admin:
+
+* review
+* approve
+* reject
+* request more information
+* audit trail
+
+Verify:
+
+* non-admin cannot approve
+* artist cannot approve themselves
+* private verification documents remain private
+* RLS blocks unauthorized access
+
+⸻
+
+13. ADMIN SECURITY
+
+Attempt admin operations as:
+
+1. unauthenticated visitor
+2. normal viewer
+3. creator without admin role
+4. real admin
+
+Only the admin should be able to perform privileged operations.
+
+Do not rely only on frontend route protection.
+
+Database/RPC authorization must enforce access.
+
+⸻
+
+14. NOTIFICATIONS
+
+Verify notifications are generated only for real events.
+
+Test relevant events such as:
+
+* follow
+* verification decision
+* feedback response
+
+Verify:
+
+* unread state
+* mark read
+* delete
+* realtime updates where already implemented
+* refresh persistence
+
+Do not create notifications for fake/demo events.
+
+⸻
+
+15. FEEDBACK
+
+Verify:
+
+* viewer submits feedback
+* creator submits feedback
+* submission persists
+* user can see their own submissions
+* admin can review
+* admin response persists
+* user cannot see another user’s private feedback unless intentionally authorized
+
+⸻
+
+16. STORAGE SECURITY
+
+Inspect all production buckets.
+
+Verify:
+
+Public where appropriate
+
+* thumbnails
+* avatars
+
+Private
+
+* verification documents
+
+Verify upload policies and ownership.
+
+Never expose service-role credentials.
+
+Do not use permanent public access for private verification documents.
+
+⸻
+
+17. RLS TEST
+
+Perform real authorization tests.
+
+Attempt unauthorized operations against:
+
+* profiles
+* artists
+* videos
+* follows
+* playlists
+* playlist_videos
+* video_likes
+* video_views
+* verification data
+* notifications
+* feedback
+* creator/growth tables
+
+Expected result:
+
+Unauthorized operations are denied.
+
+Do not weaken RLS simply to make the UI work.
+
+⸻
+
+18. EMPTY / ERROR / LOADING STATES
+
+For every major page verify:
+
+Loading
+
+Skeleton or appropriate loading UI.
+
+Empty
+
+Helpful empty state.
+
+Error
+
+Clear error message.
+
+Retry
+
+Available where appropriate.
+
+Never replace missing database content with fake content.
+
+⸻
+
+19. MOBILE QA
+
+Test the complete V1 on mobile dimensions.
+
+Pay particular attention to:
+
+* bottom navigation
+* search
+* video player
+* upload
+* artist profile
+* playlists
+* notifications
+* feedback
+* creator dashboard
+* forms
+* modals
+* scrolling
+* safe areas
+* touch targets
+
+⸻
+
+20. PERFORMANCE QA
+
+Verify:
+
+* no excessive Supabase requests
+* search remains debounced
+* React Query caching behaves correctly
+* video files are not unnecessarily loaded on listing pages
+* HLS.js remains lazy-loaded if present
+* realtime subscriptions unsubscribe correctly
+* no obvious memory leaks
+* no unnecessary rerenders
+
+Do not prematurely optimize without evidence.
+
+⸻
+
+21. PRODUCTION BUILD
+
+Run:
+
+* TypeScript
+* lint
+* production build
+* route validation
+* repository checks
+
+Fix actual errors.
+
+Do not hide errors with:
+
+* @ts-ignore
+* unnecessary any
+* fake fallback data
+* swallowed exceptions
+
+⸻
+
+22. SECURITY FINAL CHECK
+
+Run a final repository search for:
+
+* service-role key exposure
+* hardcoded secrets
+* demo data
+* fake counters
+* fake API responses
+* local-only persistence pretending to be database persistence
+* TODO production stubs
+* disabled RLS
+* insecure storage policies
+* unauthorized admin actions
+
+⸻
+
+23. SUPABASE SECURITY ADVISOR
+
+The current database optimization has already resolved:
+
+* unindexed foreign keys
+* per-row auth/RLS initialization warnings
+
+Do NOT unnecessarily change the optimized policies.
+
+The remaining multiple-permissive-policy notices should only be changed if you can prove they create a correctness/security problem.
+
+The remaining unused-index notices are acceptable while tables are empty, but document them.
+
+The remaining Leaked Password Protection warning should be treated as a launch security task.
+
+If the setting can be enabled safely through the connected Supabase tooling, do so.
+
+Otherwise clearly report the exact manual Supabase Auth setting required.
+
+⸻
+
+24. FINAL CERTIFICATION REPORT
+
+Create:
+
+MOONIRAT_V1_FINAL_PRODUCTION_GATE.md
+
+Include:
+
+Viewer
+
+* Authentication
+* Home
+* Discover
+* Search
+* Watch
+* Like
+* Follow
+* Playlists
+* Artist profile
+* Notifications
+* Feedback
+
+Creator
+
+* Artist profile
+* Upload
+* Publish
+* Edit
+* Delete/unpublish
+* Analytics
+* Verification
+
+Admin
+
+* Authorization
+* Verification
+* Featured artists
+* Moderation
+* Feedback
+* Users
+* Audit logs
+* Health
+
+For every item use:
+
+PASS
+WARN
+FAIL
+
+Never claim PASS without actually testing it.
+
+⸻
+
+FINAL DECISION
+
+At the end provide exactly:
+
+V1 STATUS
+
+PASS — ready for controlled public beta
+
+or
+
+WARN — ready only after listed blockers are resolved
+
+or
+
+FAIL — not ready
+
+Then list:
+
+1. Critical blockers
+2. Security blockers
+3. Database actions
+4. Manual Supabase actions
+5. Code fixes
+6. E2E results
+7. Build result
+8. TypeScript result
+9. Mobile result
+10. Final recommendation
+
+IMPORTANT:
+
+Do not add new features.
+
+Do not provision another database.
+
+Do not replace Supabase.
+
+Do not generate fake content.
+
+Do not stop after finding the first issue.
+
+Work through the entire validation gate and fix genuine V1 defects you can safely fix.
+
+The goal is not to make Moonirat look finished.
+
+The goal is to prove that Moonirat V1 actually works for viewers, creators, and administrators using real production infrastructure.

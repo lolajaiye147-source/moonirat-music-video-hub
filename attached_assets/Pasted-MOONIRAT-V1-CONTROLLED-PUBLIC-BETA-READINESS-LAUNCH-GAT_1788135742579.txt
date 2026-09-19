@@ -1,0 +1,290 @@
+MOONIRAT V1 — CONTROLLED PUBLIC BETA READINESS & LAUNCH GATE
+
+You are now performing the final controlled-beta readiness gate for Moonirat V1.
+
+IMPORTANT:
+Do NOT add new product features.
+Do NOT redesign the architecture.
+Do NOT migrate databases.
+Do NOT create a second authentication system.
+Do NOT replace Supabase.
+Do NOT provision a new database.
+Do NOT add monetization, ads, comments, AI, microservices, or unnecessary V1.1 features.
+
+Moonirat is a creator-first music video platform for BOTH creators and viewers/followers.
+
+The V1 product promise is:
+
+UPLOAD → DISCOVER → WATCH → FOLLOW → SAVE/PLAYLIST → RETURN
+
+Use the existing repository, existing Supabase project, existing migrations, existing RLS, existing Storage, and existing TanStack Start architecture.
+
+CURRENT VERIFIED STATUS:
+
+V1_STATUS: CONDITIONAL_PASS
+VIEW_TRACKING: PASS
+UPLOAD_RECOVERY: PASS
+STORAGE_CLEANUP: PASS
+DISCOVERY_SCALE: PASS
+TYPECHECK: PASS
+BUILD: PASS
+LEAKED_PASSWORD_PROTECTION: MANUAL_ACTION_REQUIRED
+MP4_COMPATIBILITY: BROWSER_LIMITATION
+PUBLIC_BETA_READY: NO
+
+KNOWN ACCEPTED TEMPORARY EXCEPTION:
+
+Supabase Leaked Password Protection cannot currently be enabled because it requires a paid Supabase capability.
+
+Do NOT attempt to bypass this.
+Do NOT implement a custom password blacklist.
+Do NOT modify authentication security incorrectly.
+
+Instead:
+1. Record it as a documented security exception.
+2. Keep the current Supabase Auth implementation unchanged.
+3. Mark the item MANUAL_ACTION_REQUIRED.
+4. Clearly state that it must be enabled when the appropriate Supabase plan/configuration is available.
+5. Do not falsely mark it PASS.
+
+NOW PERFORM A FINAL CONTROLLED-BETA GATE.
+
+PHASE 1 — REPOSITORY AUDIT
+
+Search the entire repository before making changes.
+
+Identify:
+- remaining mock/demo data
+- fake API responses
+- fake timers pretending to perform operations
+- local-only mutations
+- TODO/stub implementations
+- broken routes
+- dead imports
+- development-only shortcuts
+- exposed secrets
+- service-role key usage in browser/client code
+- incorrect Supabase environment variable usage
+- unsafe Storage URLs
+- authentication bypasses
+- authorization gaps
+- admin access weaknesses
+- broken RLS assumptions
+
+Do not assume previous reports are correct.
+Verify against the actual codebase.
+
+PHASE 2 — END-TO-END VIEWER JOURNEY
+
+Test the real viewer journey:
+
+1. Open Moonirat signed out
+2. Browse Home
+3. Browse Discover
+4. Search for content
+5. Open an artist
+6. Open a video
+7. Play video
+8. Verify view tracking behavior
+9. Follow/unfollow an artist when authenticated
+10. Create/use a playlist
+11. Save/remove videos
+12. Open profile
+13. Return to previously discovered content
+14. Verify appropriate loading, empty, and error states
+
+No fake success states are allowed.
+
+PHASE 3 — CREATOR JOURNEY
+
+Test:
+
+1. Create account
+2. Create artist profile
+3. Upload video
+4. Upload thumbnail
+5. Verify upload progress
+6. Interrupt/recover upload where possible
+7. Confirm database persistence
+8. Confirm video appears in creator dashboard
+9. Confirm video appears in discovery when public
+10. Edit video metadata
+11. Delete/remove video
+12. Confirm Storage cleanup
+13. Confirm removed video cannot remain publicly discoverable
+14. Submit verification request
+15. Confirm verification status behavior
+
+PHASE 4 — FOLLOWER / RETURN JOURNEY
+
+Moonirat is NOT only for artists.
+
+Verify the follower experience:
+
+- follow an artist
+- unfollow an artist
+- following state persists after refresh
+- followed artists appear correctly in Following/discovery surfaces
+- playlists persist
+- watch history/resume behavior works where implemented
+- notifications behave correctly where implemented
+- profile data persists
+- feedback submission works
+- users only see their own private data
+
+PHASE 5 — ADMIN SECURITY GATE
+
+Verify:
+
+- ordinary users cannot access admin routes
+- unauthenticated users cannot access admin routes
+- admin-only actions require proper authorization
+- verification actions are protected
+- moderation actions are protected
+- Storage cleanup cannot be triggered by unauthorized users
+- RLS prevents cross-user data access
+- no service-role credentials reach the browser
+- admin actions are auditable where designed
+
+Do not weaken RLS to make tests pass.
+
+PHASE 6 — FEEDBACK JOURNEY
+
+Fully certify the beta feedback system:
+
+Viewer/creator:
+→ submit feedback
+→ database persistence
+→ see submission
+→ see status
+→ receive/update status where implemented
+
+Admin:
+→ see feedback
+→ filter/search
+→ change status
+→ add response/admin notes
+→ verify user can see the updated state
+
+If any part is incomplete, fix it using the existing Supabase architecture.
+
+PHASE 7 — PLAYBACK CERTIFICATION
+
+Do NOT add permanent WebM files just to satisfy a restricted testing browser.
+
+Do NOT add transcoding infrastructure.
+
+Do NOT add HLS infrastructure unless the existing implementation genuinely requires it.
+
+Validate the existing MP4/H.264/AAC implementation using supported environments:
+
+- Chrome
+- Safari
+- Firefox
+
+Test:
+
+- initial playback
+- seeking
+- buffering
+- resume
+- invalid media
+- mobile playback
+- range requests
+- view threshold
+- cooldown
+- playback error handling
+
+If the controlled browser cannot decode the codec but supported browsers pass, classify it as:
+
+MP4_COMPATIBILITY: CONDITIONAL_PASS
+
+Document the limitation instead of changing product architecture.
+
+PHASE 8 — SUPABASE PRODUCTION CHECK
+
+Verify the live Supabase project.
+
+Check:
+
+- migrations
+- tables
+- indexes
+- RLS
+- Storage buckets
+- Storage policies
+- Auth configuration
+- Realtime configuration where used
+- foreign-key indexes
+- security advisor issues
+- duplicate permissive policies
+- unused indexes
+- leaked-password protection
+
+For leaked-password protection:
+
+LEAKED_PASSWORD_PROTECTION:
+MANUAL_ACTION_REQUIRED
+
+Do not attempt to bypass the setting.
+
+PHASE 9 — PERFORMANCE / SCALE
+
+Verify:
+
+- Discover pagination
+- Search pagination
+- query limits
+- indexes
+- no unbounded queries
+- no unnecessary realtime subscriptions
+- no request-per-keystroke behavior
+- image loading
+- video lazy loading
+- mobile responsiveness
+- acceptable loading states
+
+Do not over-engineer V1.
+
+PHASE 10 — LAUNCH DECISION
+
+Create/update:
+
+MOONIRAT_V1_CONTROLLED_BETA_READINESS.md
+
+Use exactly:
+
+V1_STATUS:
+VIEWER_JOURNEY:
+CREATOR_JOURNEY:
+FOLLOWER_JOURNEY:
+UPLOAD_RECOVERY:
+VIEW_TRACKING:
+PLAYBACK:
+DISCOVERY_SCALE:
+SEARCH:
+PLAYLISTS:
+FEEDBACK:
+ADMIN_SECURITY:
+RLS:
+STORAGE:
+AUTH:
+TYPECHECK:
+BUILD:
+LEAKED_PASSWORD_PROTECTION:
+MP4_COMPATIBILITY:
+PUBLIC_BETA_READY:
+
+For every item use only:
+
+PASS
+CONDITIONAL_PASS
+WARN
+FAIL
+MANUAL_ACTION_REQUIRED
+
+Do not mark anything PASS without actually verifying it.
+
+FINAL DECISION RULE:
+
+PUBLIC_BETA_READY =

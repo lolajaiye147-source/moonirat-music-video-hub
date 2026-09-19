@@ -1,0 +1,259 @@
+MOONIRAT V1 — VIDEO PLAYBACK COMPATIBILITY & VALIDATION FIX
+
+You are working on Moonirat V1, a production-oriented creator-first music video platform serving BOTH creators and viewers/followers.
+
+The current Supabase Storage media URL has been verified:
+
+* The uploaded object is intact.
+* HTTP range requests work correctly.
+* The media is a valid H.264/AAC MP4.
+* Supabase Storage is not the problem.
+* The current browser test runtime reports HTML5 media error code 4 because its media decoder does not support the tested MP4 configuration.
+
+PRIMARY OBJECTIVE
+
+Fix and validate Moonirat’s video playback architecture without changing the V1 product scope.
+
+Do NOT treat the browser’s codec limitation as evidence that the Supabase video URL is broken.
+
+Do NOT permanently convert Moonirat’s production media to WebM merely to satisfy one testing browser.
+
+The goal is reliable playback for real Moonirat viewers across supported modern browsers and mobile devices.
+
+RULES
+
+1. DO NOT add monetization.
+2. DO NOT add ads.
+3. DO NOT add comments.
+4. DO NOT add AI features.
+5. DO NOT add microservices.
+6. DO NOT introduce unnecessary infrastructure.
+7. Keep Supabase as the source of truth for V1.
+8. Preserve the existing Upload → Discover → Watch → Follow experience.
+9. Do not replace real Supabase data with mock data.
+10. Do not weaken RLS or expose service-role credentials to the browser.
+11. Do not change database behavior unless genuinely required for playback.
+12. Do not create permanent duplicate video files just for browser testing.
+
+STEP 1 — AUDIT THE CURRENT PLAYER
+
+Inspect:
+
+* src/components/MooniratPlayer.tsx
+* src/routes/videos.$id.tsx
+* Supabase Storage configuration
+* video_url/storage path handling
+* any existing master_playlist_url
+* processing_status
+* video MIME/type handling
+* view tracking
+* resume playback
+* loading/error states
+
+Determine exactly how the player currently chooses its source.
+
+Document whether playback currently follows:
+
+1. HLS when master_playlist_url exists
+2. native HLS where supported
+3. direct MP4 fallback
+
+Do not rewrite working code unnecessarily.
+
+STEP 2 — IMPLEMENT ROBUST SOURCE SELECTION
+
+The production player must use this priority:
+
+1. HLS master playlist when a valid master_playlist_url exists and the browser/runtime supports HLS playback.
+2. Native HLS support where available, especially Safari/iOS.
+3. Direct MP4 fallback using video_url.
+4. Clear user-facing playback error if no playable source exists.
+
+HLS.js must remain lazy-loaded so it does not unnecessarily increase the initial homepage bundle.
+
+Never assume HLS exists merely because master_playlist_url is present.
+
+Check support before attaching HLS.
+
+Clean up HLS instances/listeners when the video changes or the component unmounts.
+
+Prevent duplicate media initialization.
+
+STEP 3 — HANDLE MP4 COMPATIBILITY CORRECTLY
+
+Do not convert every uploaded video to WebM as a workaround.
+
+Ensure uploaded production videos are expected to use broadly supported:
+
+* H.264 video
+* AAC audio
+* MP4 container
+
+If the current upload flow accepts arbitrary video formats, add validation that clearly communicates the supported V1 format to creators.
+
+Do not silently accept an unsupported file and later let viewers discover that it cannot play.
+
+If transcoding is already part of the architecture, keep the implementation forward-compatible with HLS.
+
+STEP 4 — TEST WITH A REAL PLAYABLE FIXTURE
+
+Use the existing verified MP4 fixture for normal browser validation.
+
+If the testing browser cannot decode it:
+
+* do not alter the production architecture merely to satisfy that browser;
+* document the limitation;
+* use a browser/runtime known to support H.264/AAC for final playback validation where possible.
+
+A disposable WebM may be generated ONLY as a diagnostic test fixture if necessary.
+
+Do not store it as a permanent Moonirat production asset.
+
+STEP 5 — VERIFY VIEW TRACKING
+
+Playback must not incorrectly count a view merely because the page opened.
+
+Verify the existing V1 rule:
+
+* view is counted after the configured watch threshold;
+* duplicate/spam views are prevented according to the existing cooldown;
+* failed playback does not count as a view;
+* seeking should not incorrectly manufacture a view;
+* view insertion errors must not break playback.
+
+Use the existing Supabase database/RPC implementation if already present.
+
+Do not introduce fake counters.
+
+STEP 6 — VERIFY RESUME PLAYBACK
+
+Confirm:
+
+* playback position is saved locally;
+* returning to the same video restores the position;
+* completed videos do not resume from the end;
+* invalid/stale positions are ignored;
+* localStorage errors do not break playback.
+
+Do not store unnecessary personal data.
+
+STEP 7 — ERROR UX
+
+Create clear states for:
+
+* loading
+* buffering
+* unsupported media
+* failed HLS
+* failed MP4
+* network interruption
+* unavailable/deleted video
+
+The error message must distinguish:
+
+“Video is unavailable”
+
+from:
+
+“Your browser may not support this video format.”
+
+Provide a retry action where appropriate.
+
+Do not expose technical stack traces to viewers.
+
+STEP 8 — MOBILE VALIDATION
+
+Validate the player behavior for:
+
+* iOS/Safari
+* Android/mobile Chrome
+* desktop Chrome
+* desktop Safari
+* desktop Firefox where supported
+
+Pay particular attention to:
+
+* fullscreen
+* controls
+* seeking
+* autoplay restrictions
+* HLS/native playback
+* orientation
+* buffering
+* resume position
+
+Do not require autoplay with sound.
+
+STEP 9 — PRESERVE MOONIRAT’S PRODUCT VISION
+
+Moonirat is not only an artist tool.
+
+The playback experience must serve:
+
+CREATORS:
+Upload → publish → manage videos → understand performance
+
+VIEWERS:
+Discover → watch → save → follow → return
+
+FOLLOWERS:
+Follow creators → discover new releases → watch consistently
+
+Do not optimize playback only for the creator dashboard.
+
+STEP 10 — PRODUCTION VALIDATION
+
+Run:
+
+* TypeScript/typecheck
+* production build
+* route validation
+* Supabase request validation
+* browser playback validation
+* mobile playback validation where available
+* view tracking validation
+* resume validation
+* HLS fallback validation
+* direct MP4 fallback validation
+* signed-out viewer validation
+* authenticated viewer validation
+
+Confirm:
+
+* no 401/403/500 caused by this change
+* no Supabase request failures
+* no console errors caused by the player
+* no memory leaks from HLS instances
+* no duplicate view events
+* no fake video data
+* no service-role key exposed client-side
+
+IMPORTANT FINAL RULE
+
+Do not declare the task complete merely because the Replit test browser can play a generated WebM.
+
+The acceptance criterion is:
+
+“Moonirat’s production playback architecture correctly handles supported H.264/AAC MP4 and HLS sources, gracefully handles unsupported media runtimes, preserves view tracking/resume behavior, and does not compromise the V1 architecture.”
+
+At the end, provide a concise report:
+
+PLAYBACK_STATUS = PASS / NEEDS_FIXES
+
+HLS_STATUS = PASS / NOT_CONFIGURED / NEEDS_FIXES
+
+MP4_STATUS = PASS / BROWSER_LIMITATION / NEEDS_FIXES
+
+VIEW_TRACKING = PASS / NEEDS_FIXES
+
+RESUME_PLAYBACK = PASS / NEEDS_FIXES
+
+MOBILE_PLAYBACK = PASS / NEEDS_VALIDATION
+
+TYPECHECK = PASS / FAIL
+
+BUILD = PASS / FAIL
+
+SUPABASE_ERRORS = 0 / COUNT
+
+Then list only the remaining blockers that genuinely prevent Moonirat V1 launch.

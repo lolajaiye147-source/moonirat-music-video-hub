@@ -1,0 +1,308 @@
+1. VIDEO PLAYER — TRACE AND FIX END-TO-END
+
+Inspect:
+	•	src/components/MooniratPlayer.tsx
+	•	src/routes/videos.$id.tsx
+	•	Supabase video query
+	•	video_url
+	•	master_playlist_url if present
+	•	processing_status if present
+	•	any HLS.js integration
+	•	any memoized source derivation
+	•	any fallback logic
+
+Determine exactly why a valid public video_url is not being used correctly by the player.
+
+Player requirements
+
+The player must:
+	1.	Use the current video’s actual database row.
+	2.	Derive the media source directly from the current query result.
+	3.	Avoid stale memoized values or dependencies that can produce an incorrect/undefined source.
+	4.	Prefer HLS only when a valid master_playlist_url exists and is usable.
+	5.	Fall back to video_url when HLS is unavailable.
+	6.	Support browsers with native HLS where appropriate.
+	7.	Gracefully fall back to normal HTML5 <video> playback.
+	8.	Never invent or construct fake media URLs.
+	9.	Never replace a valid database URL with demo media.
+	10.	Show a useful loading state while the video data is loading.
+	11.	Show a useful “video unavailable” state when no valid media URL exists.
+	12.	Provide a retry action when playback fails.
+	13.	Clean up HLS instances on unmount or video change.
+	14.	Prevent multiple HLS instances from attaching to the same video element.
+	15.	Avoid memory leaks.
+	16.	Keep the player mobile-friendly.
+	17.	Preserve the existing Moonirat player UX unless a change is required to fix the bug.
+
+IMPORTANT
+
+Do not blindly remove functionality.
+
+First inspect the current source-selection logic and identify the actual failure.
+
+Then make the smallest reliable production fix.
+
+⸻
+
+2. HLS FALLBACK LOGIC
+
+Implement the source priority safely:
+
+Priority
+
+A. Valid master_playlist_url
+→ HLS.js where required
+
+B. Native HLS support
+→ use the HLS URL directly when supported
+
+C. Valid video_url
+→ normal HTML5 video
+
+D. No usable source
+→ clear unavailable state
+
+If HLS encounters a fatal playback error:
+	•	destroy the HLS instance safely
+	•	attempt the direct video_url fallback if available
+	•	do not continuously retry in a loop
+	•	show a clear error if both sources fail
+
+Do not require HLS/transcoding infrastructure for V1 playback if a direct video URL is already available.
+
+⸻
+
+3. ADMIN ROLE LOOKUP — FIX THE 406 PROPERLY
+
+Find every admin-role lookup in the application.
+
+The current problem is likely caused by using a strict single-row query such as:
+
+.single()
+
+when a normal user may legitimately have zero rows in user_roles.
+
+Change the lookup to nullable semantics where appropriate, for example:
+	•	.maybeSingle()
+
+or an equivalent query pattern.
+
+The expected case:
+
+User is authenticated but has no admin role
+
+must NOT be treated as an application error.
+
+It should resolve cleanly to:
+
+isAdmin = false
+
+Only actual database/network/authentication errors should be surfaced as errors.
+
+Do not suppress genuine errors.
+
+⸻
+
+4. ADMIN SECURITY
+
+Do NOT solve the 406 issue by granting everyone admin access.
+
+Verify:
+	•	user_roles is queried using the authenticated user’s ID
+	•	admin checks are enforced consistently
+	•	frontend admin visibility is not the only security boundary
+	•	privileged database operations remain protected by RLS/RPC/security-definer logic where already designed
+	•	no service-role key is exposed to the browser
+	•	SUPABASE_SERVICE_ROLE_KEY must never use the VITE_ prefix
+	•	never log secrets
+
+If an admin operation is currently insecure, report it rather than silently weakening security.
+
+⸻
+
+5. SUPABASE CLIENT HARDENING
+
+Inspect the Supabase client configuration.
+
+It must use the intended public browser credentials:
+	•	VITE_SUPABASE_URL
+	•	VITE_SUPABASE_PUBLISHABLE_KEY
+
+Do not hardcode private credentials.
+
+The service-role key, if required for server-side operations, must remain server-only.
+
+Never expose:
+
+SUPABASE_SERVICE_ROLE_KEY
+
+to browser/client bundles.
+
+⸻
+
+6. REMOVE DEBUG NOISE
+
+After fixing the root causes:
+	•	remove unnecessary console logs
+	•	remove temporary debugging code
+	•	do not hide real errors
+	•	keep useful development diagnostics where appropriate
+	•	ensure expected “no admin role” cases do not generate noisy 406 errors
+
+⸻
+
+7. VERIFY EVERY VIDEO PLAYBACK PATH
+
+Test these cases:
+
+Case A
+
+Video has:
+	•	valid video_url
+	•	no HLS URL
+
+Expected:
+Direct HTML5 playback works.
+
+Case B
+
+Video has:
+	•	valid video_url
+	•	valid master_playlist_url
+
+Expected:
+HLS is preferred when supported.
+
+Case C
+
+HLS URL fails
+
+Expected:
+Player falls back to video_url.
+
+Case D
+
+Both URLs are missing
+
+Expected:
+Clean “Video unavailable” state.
+
+Case E
+
+Video query is loading
+
+Expected:
+Loading skeleton/state.
+
+Case F
+
+Video ID does not exist
+
+Expected:
+Not-found/unavailable state, no crash.
+
+⸻
+
+8. VERIFY ADMIN ROLE PATHS
+
+Test:
+
+Normal authenticated user
+	•	no user_roles row
+	•	no 406 error
+	•	isAdmin = false
+	•	normal application works
+
+Admin user
+	•	valid admin role
+	•	isAdmin = true
+	•	admin dashboard accessible
+
+Logged-out user
+	•	no crash
+	•	protected routes redirect appropriately
+
+⸻
+
+9. RUN A REAL PRODUCTION VALIDATION
+
+After implementing the fixes:
+	1.	Run TypeScript/typecheck.
+	2.	Run the production build.
+	3.	Start the application.
+	4.	Check browser console.
+	5.	Check network requests.
+	6.	Verify no repeated 406 requests.
+	7.	Open a real video from Supabase.
+	8.	Confirm the actual database video_url reaches the player.
+	9.	Confirm playback starts.
+	10.	Test HLS fallback if applicable.
+	11.	Test admin and non-admin users.
+	12.	Check all affected routes for regressions.
+
+Do not declare success merely because Vite starts.
+
+⸻
+
+10. DO NOT CREATE UNNECESSARY MIGRATIONS
+
+Before changing the database:
+	•	inspect the existing migrations
+	•	inspect the actual schema
+	•	inspect existing RLS policies
+	•	determine whether a database change is genuinely necessary
+
+If the problem can be fixed entirely in the application code, do NOT create a migration.
+
+If a migration is genuinely required, create a new Supabase migration only. Do not modify historical migrations.
+
+⸻
+
+11. FINAL AUDIT
+
+At the end, provide:
+
+FIXED
+
+List every confirmed issue fixed.
+
+ROOT CAUSE
+
+Explain the actual cause of:
+	•	video playback failure
+	•	admin-role 406
+
+FILES CHANGED
+
+List files changed and why.
+
+DATABASE CHANGES
+
+State clearly:
+	•	NONE, if no migration was needed
+	•	OR exactly which migration was created and why
+
+VALIDATION
+
+Report:
+	•	TypeScript: PASS/FAIL
+	•	Build: PASS/FAIL
+	•	App startup: PASS/FAIL
+	•	Video playback: PASS/FAIL
+	•	HLS fallback: PASS/FAIL
+	•	Normal user auth: PASS/FAIL
+	•	Admin auth: PASS/FAIL
+	•	Console errors: PASS/FAIL
+	•	406 admin-role noise: PASS/FAIL
+
+MOONIRAT V1 RULE
+
+Do not add new product features during this pass.
+
+This is a production bug-fix and hardening pass only.
+
+The goal is:
+
+real Supabase data → reliable player → correct authentication → secure admin checks → clean production behavior.
+
+Do not stop after the first fix. Trace, implement, test, and verify the complete flow.

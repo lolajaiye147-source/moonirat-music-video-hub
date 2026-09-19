@@ -1,0 +1,388 @@
+MOONIRAT V1 — CRITICAL ACCOUNT CREATION & AUTHENTICATION FIX
+
+You are working on the existing Moonirat V1 production codebase.
+
+The app is currently at CONDITIONAL_PASS / controlled-beta stage, but new users still cannot successfully create an account.
+
+This is now a P0 blocker. Fix the existing account-creation flow before doing any new features or beta-launch work.
+
+CORE PRODUCT RULE
+
+Moonirat is NOT an artist-only platform.
+
+Every person should be able to create a normal Moonirat account as a:
+
+* Viewer
+* Fan
+* Follower
+
+An artist/creator profile is OPTIONAL and must be created later.
+
+Therefore:
+
+SIGN UP ≠ CREATE ARTIST PROFILE
+
+The signup screen must NEVER require an artist name or imply that every new user is an artist.
+
+The correct journey is:
+
+Sign Up
+→ Moonirat account created
+→ Viewer/Fan profile created
+→ Email confirmation if enabled
+→ User can browse, watch, follow, like, create playlists, and submit feedback
+→ Later, user may choose “Become a Creator / Create Artist Profile”
+→ Creator onboarding begins only then.
+
+⸻
+
+PHASE 1 — INVESTIGATE BEFORE CHANGING CODE
+
+Do NOT guess the cause.
+
+Search the entire repository first and trace the complete signup flow:
+
+1. Signup UI
+2. Auth context/provider
+3. Supabase client
+4. supabase.auth.signUp()
+5. Email confirmation handling
+6. Auth callback/session handling
+7. profiles table insert/upsert
+8. user_roles handling
+9. Any artist-profile creation logic
+10. RLS policies
+11. Database triggers/functions
+12. Route redirects after signup
+13. Resend/Supabase SMTP configuration assumptions
+14. Any rate-limit handling
+15. Any code that assumes an artist exists immediately after signup
+
+Inspect the existing Supabase migrations before changing the schema.
+
+Use the EXISTING Supabase project.
+
+DO NOT provision a new database.
+
+DO NOT introduce another backend.
+
+DO NOT replace Supabase.
+
+DO NOT expose a service-role key to the browser.
+
+⸻
+
+PHASE 2 — IDENTIFY THE ACTUAL FAILURE
+
+Reproduce the signup flow using a disposable test account.
+
+Capture the exact failure at every stage:
+
+* UI validation
+* Supabase signUp request
+* Supabase response
+* profile creation
+* role creation
+* email confirmation
+* session creation
+* redirect/navigation
+* RLS/database errors
+* HTTP status codes
+
+Check browser console and network requests.
+
+If signup returns an error, display a truthful user-friendly message instead of silently failing.
+
+Do not fabricate a successful signup.
+
+If Supabase returns a specific error, preserve that error in development diagnostics while showing a safe message to the user.
+
+⸻
+
+PHASE 3 — FIX THE ACCOUNT MODEL
+
+Implement the smallest production-safe correction necessary.
+
+A normal signup should require only appropriate account information such as:
+
+* Username/display name
+* Email
+* Password
+
+Do NOT require:
+
+* Artist name
+* Artist profile
+* Genre
+* Artist bio
+* Artist verification
+* Artist social links
+* Artist documents
+
+Those belong to creator onboarding.
+
+The username must be presented as a general Moonirat username/display identity, NOT “your artist name.”
+
+⸻
+
+PHASE 4 — PROFILE CREATION
+
+After successful Supabase Auth signup:
+
+Create/update the user’s normal profiles record using the existing schema.
+
+Make this operation:
+
+* idempotent
+* safe to retry
+* compatible with email confirmation
+* protected by existing RLS
+* free of duplicate profile errors
+
+If the existing architecture already uses a database trigger for profile creation, DO NOT create a second competing mechanism.
+
+Choose the existing architecture after inspecting the repository.
+
+Do not create duplicate triggers.
+
+⸻
+
+PHASE 5 — ROLE MODEL
+
+Inspect the existing user_roles implementation.
+
+A new account must NOT automatically become an admin or artist.
+
+The default experience should be a normal Moonirat user/viewer.
+
+If the existing role system requires a normal-user role, create/use the existing appropriate role safely.
+
+Artist/creator privileges must remain separate.
+
+Admin privileges must remain protected.
+
+Do not weaken RLS to make signup work.
+
+⸻
+
+PHASE 6 — EMAIL CONFIRMATION
+
+Inspect the current Supabase Auth email-confirmation configuration.
+
+If email confirmation is enabled:
+
+Signup should correctly handle:
+
+SIGNUP SUCCESS
+→ “Check your email to confirm your Moonirat account.”
+
+Do not falsely show the user as fully authenticated if Supabase requires confirmation.
+
+Password reset must continue working.
+
+If Resend/SMTP configuration is relevant, identify the exact configuration problem.
+
+Do NOT add Resend API keys to frontend code.
+
+Do NOT expose SMTP credentials or service-role credentials.
+
+If email delivery is the only remaining problem, clearly separate:
+
+ACCOUNT CREATION SUCCESS
+
+from
+
+EMAIL DELIVERY FAILURE.
+
+⸻
+
+PHASE 7 — RATE LIMITING
+
+The previous certification observed Supabase HTTP 429 rate limiting.
+
+Do not implement automatic aggressive retries.
+
+Ensure one signup submission creates one request.
+
+The button must:
+
+* disable while submitting
+* show progress
+* prevent double submission
+* recover after an error
+
+If Supabase returns 429, show a truthful message such as:
+
+“Too many signup attempts right now. Please wait a few minutes and try again.”
+
+Do not treat 429 as successful signup.
+
+⸻
+
+PHASE 8 — POST-SIGNUP EXPERIENCE
+
+After successful account creation, route the user to the normal Moonirat viewer experience.
+
+The user should be able to:
+
+* Browse Home
+* Discover music
+* Search
+* Watch videos
+* Follow artists
+* Like videos
+* Manage playlists
+* View/edit their profile
+* Submit feedback
+
+Do NOT redirect a normal new user to:
+
+* Artist Dashboard
+* Artist Verification
+* Artist Creation
+* Creator onboarding
+
+unless they explicitly choose to become a creator.
+
+⸻
+
+PHASE 9 — CREATOR CONVERSION
+
+Keep the existing creator workflow intact.
+
+From a normal user account:
+
+Profile / Dashboard
+→ “Become a Creator”
+→ Create Artist Profile
+→ Creator onboarding
+→ Upload
+→ Verification
+
+Do not merge this into signup.
+
+This distinction is fundamental to Moonirat’s product vision.
+
+⸻
+
+PHASE 10 — TEST THE COMPLETE JOURNEY
+
+Create fresh disposable test accounts and verify:
+
+Viewer
+
+Signup
+→ confirmation
+→ login
+→ Home
+→ Discover
+→ Search
+→ Watch
+→ Follow
+→ Like
+→ Playlist
+→ Feedback
+
+Creator
+
+Existing viewer account
+→ Become Creator
+→ Artist profile creation
+→ Creator dashboard
+→ Upload
+→ Edit video
+→ Verification
+
+Admin
+
+Existing admin account
+→ Admin access remains protected
+→ Viewer cannot access admin
+→ Creator cannot access admin unless explicitly authorized
+
+Security
+
+Verify:
+
+* RLS remains enabled
+* users cannot read another user’s private data
+* users cannot modify another user’s profile
+* users cannot grant themselves creator/admin privileges
+* service-role key is never exposed client-side
+* no second backend introduced
+
+⸻
+
+PHASE 11 — DO NOT CHANGE FROZEN V1 FEATURES
+
+Do NOT add:
+
+* monetization
+* ads
+* comments
+* AI
+* microservices
+* transcoding
+* alternate video formats
+* speculative infrastructure
+* unnecessary database changes
+
+Do not redesign Moonirat.
+
+Fix account creation only.
+
+⸻
+
+PHASE 12 — FINAL CERTIFICATION
+
+After implementation:
+
+1. Run TypeScript check.
+2. Run production build.
+3. Run SSR validation.
+4. Test fresh viewer signup.
+5. Test login.
+6. Test email confirmation if enabled.
+7. Test password reset.
+8. Test creator conversion.
+9. Test admin authorization.
+10. Inspect browser console.
+11. Inspect Supabase errors.
+12. Verify no 401/403/429/500 caused by application logic.
+13. Confirm no duplicate profiles.
+14. Confirm no duplicate signup requests.
+15. Confirm RLS remains intact.
+
+Update the existing production documentation with the actual result.
+
+Use:
+
+ACCOUNT_CREATION: PASS / WARN / FAIL
+VIEWER_SIGNUP: PASS / WARN / FAIL
+EMAIL_CONFIRMATION: PASS / WARN / FAIL
+LOGIN: PASS / WARN / FAIL
+PASSWORD_RESET: PASS / WARN / FAIL
+CREATOR_CONVERSION: PASS / WARN / FAIL
+ADMIN_AUTH: PASS / WARN / FAIL
+RLS: PASS / WARN / FAIL
+TYPECHECK: PASS / FAIL
+BUILD: PASS / FAIL
+
+Do not mark PASS based on code inspection alone.
+
+Only mark PASS after an actual end-to-end test with a fresh disposable account.
+
+IMPORTANT
+
+If the failure is caused by Supabase configuration rather than application code, DO NOT work around it by weakening security or changing architecture.
+
+Report:
+
+1. Exact root cause
+2. Whether it is code or Supabase configuration
+3. Exact fix
+4. Whether the fix was applied
+5. What still requires manual action
+6. Final signup test result
+
+Do not proceed to the next Moonirat beta/stabilization task until normal viewer account creation is confirmed working end-to-end.

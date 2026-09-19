@@ -1,0 +1,561 @@
+MOONIRAT V1 — PLATFORM-INDEPENDENT / PORTABLE ARCHITECTURE HARDENING
+
+Act as the Principal Software Architect for Moonirat.
+
+MISSION:
+
+Make Moonirat V1 completely portable and deployment-provider independent.
+
+Moonirat.space is currently connected to Replit Core and Replit is the current hosting/development environment.
+
+Replit must NOT become a permanent architectural dependency.
+
+The application must be easy to move in the future to:
+
+- A personal VPS
+- Dedicated server
+- Docker/Docker Compose
+- AWS
+- DigitalOcean
+- Hetzner
+- Railway
+- Render
+- Fly.io
+- Another cloud provider
+- Another standard Node/Bun hosting environment
+
+The domain Moonirat.space must remain provider-independent.
+
+IMPORTANT:
+
+Do not migrate away from Replit now.
+
+Do not change the current production hosting.
+
+Do not add new product features.
+
+Do not redesign Moonirat.
+
+Do not change the Moonirat V1 product scope.
+
+Do not replace Supabase unless absolutely required.
+
+The objective is PORTABILITY, DOCUMENTATION, and CLEAN ARCHITECTURE.
+
+==================================================
+1. AUDIT FOR REPLIT DEPENDENCIES
+==================================================
+
+Search the entire repository for:
+
+- Replit-specific packages
+- Replit SDKs
+- Replit APIs
+- Replit environment variables
+- Replit filesystem assumptions
+- Replit deployment APIs
+- Replit-specific server configuration
+- Replit-specific ports
+- Replit-specific authentication
+- Replit-specific storage
+- Replit-specific database connections
+- Replit workflow assumptions
+- hardcoded Replit URLs
+- hardcoded deployment URLs
+- development-only hacks
+
+Identify every dependency on Replit.
+
+For each dependency:
+
+- Explain why it exists.
+- Determine whether it is actually required.
+- Remove unnecessary Replit coupling.
+- Replace it with a standard platform-independent implementation where appropriate.
+
+Moonirat should run as a normal web application without requiring Replit-specific APIs.
+
+==================================================
+2. STANDARD ENVIRONMENT CONFIGURATION
+==================================================
+
+Move all environment-specific configuration into environment variables.
+
+Never hardcode:
+
+- Supabase URL
+- Supabase keys
+- database credentials
+- storage credentials
+- API secrets
+- deployment URLs
+- ports
+- authentication secrets
+
+Create a clearly documented environment configuration.
+
+Provide:
+
+.env.example
+
+with safe placeholder values only.
+
+Separate:
+
+PUBLIC/CLIENT configuration
+
+from
+
+SERVER-ONLY/SECRET configuration.
+
+Never expose privileged credentials to the browser.
+
+==================================================
+3. STANDARD SERVER CONFIGURATION
+==================================================
+
+The application must respect standard environment variables such as:
+
+PORT
+HOST
+NODE_ENV
+
+Do not assume:
+
+- port 8080
+- port 3000
+- IPv6
+- Replit's network configuration
+
+The server must bind correctly using the environment-provided host/port.
+
+Prefer a portable default such as:
+
+HOST=0.0.0.0
+
+when appropriate for production containers/servers.
+
+Do not hardcode a provider-specific hostname.
+
+==================================================
+4. PACKAGE MANAGER CONSISTENCY
+==================================================
+
+Moonirat currently uses Bun.
+
+Keep Bun as the supported package manager unless there is a strong architectural reason not to.
+
+Document:
+
+- required Bun version
+- installation
+- dependency installation
+- development command
+- typecheck command
+- build command
+- production start command
+
+If the application can safely run with Node/npm without changes, document that compatibility.
+
+Do not introduce unnecessary package-manager changes.
+
+==================================================
+5. DOCKER SUPPORT
+==================================================
+
+Create a production-ready Dockerfile if the current architecture supports it.
+
+The Docker image must:
+
+- install dependencies
+- build the application
+- start the production server
+- receive configuration through environment variables
+- not contain secrets
+- not depend on Replit
+- not depend on a developer's local filesystem
+
+If appropriate, also create:
+
+docker-compose.yml
+
+for local development/testing.
+
+Do not containerize Supabase itself unless there is a specific requirement.
+
+==================================================
+6. DATABASE PORTABILITY
+==================================================
+
+Moonirat currently uses Supabase/PostgreSQL.
+
+Keep Supabase as the current backend.
+
+However:
+
+- Keep database migrations inside the repository.
+- Keep schema definitions version-controlled.
+- Keep seed scripts version-controlled.
+- Avoid undocumented dashboard-only database changes.
+- Document how a developer can provision the database.
+- Document how migrations are applied.
+- Document how test data is seeded.
+
+Do not make the application dependent on undocumented manual database changes.
+
+Where practical, keep application code dependent on PostgreSQL-compatible interfaces rather than Replit-specific database functionality.
+
+==================================================
+7. STORAGE PORTABILITY
+==================================================
+
+Moonirat currently uses Supabase Storage.
+
+Keep Supabase Storage for V1.
+
+However, isolate storage-specific operations behind a clean storage service/module where practical.
+
+The application should have a clear boundary such as:
+
+StorageService
+
+responsible for:
+
+- upload
+- delete
+- signed/public URL generation
+- file existence
+- metadata
+
+Do not scatter provider-specific storage logic throughout UI components.
+
+This makes a future migration to:
+
+- AWS S3
+- Cloudflare R2
+- MinIO
+- another S3-compatible provider
+
+much easier.
+
+Do NOT migrate storage now.
+
+==================================================
+8. SUPABASE PORTABILITY
+==================================================
+
+Keep Supabase for Moonirat V1.
+
+However, avoid unnecessarily coupling UI components directly to Supabase implementation details.
+
+Use clear separation between:
+
+UI
+→ hooks/query layer
+→ application/service layer
+→ Supabase implementation
+
+Existing functionality must remain unchanged.
+
+Do not rewrite working code simply for abstraction.
+
+Only introduce boundaries where they materially improve maintainability and future migration.
+
+==================================================
+9. FILESYSTEM SAFETY
+==================================================
+
+Audit the application for assumptions that local files persist permanently.
+
+The application must not depend on:
+
+- Replit persistent filesystem
+- temporary local files
+- local uploads surviving restarts
+- process memory as permanent storage
+
+All persistent user data must remain in:
+
+- PostgreSQL/Supabase
+- Supabase Storage
+
+or another explicitly configured persistent service.
+
+==================================================
+10. DEPLOYMENT CONFIGURATION
+==================================================
+
+Create a deployment-independent structure.
+
+Document:
+
+LOCAL DEVELOPMENT
+→
+BUILD
+→
+PRODUCTION
+
+The production application should be deployable without knowing whether it is running on:
+
+Replit
+VPS
+Docker
+AWS
+DigitalOcean
+Hetzner
+or another provider.
+
+==================================================
+11. DOCUMENTATION FOR FUTURE DEVELOPERS
+==================================================
+
+Create/update:
+
+README.md
+
+Include a clear Moonirat developer guide containing:
+
+1. What Moonirat is
+2. Architecture overview
+3. Technology stack
+4. Repository structure
+5. Local setup
+6. Required environment variables
+7. Supabase setup
+8. Database migrations
+9. Database seed
+10. Storage configuration
+11. Authentication configuration
+12. Development commands
+13. Typecheck
+14. Build
+15. Production start
+16. Testing
+17. Deployment
+18. Replit deployment
+19. Generic VPS deployment
+20. Docker deployment
+21. Troubleshooting
+22. Security rules
+23. Contribution guidelines
+
+Write the documentation for a developer who has NEVER seen Moonirat before.
+
+==================================================
+12. ARCHITECTURE DOCUMENTATION
+==================================================
+
+Create:
+
+docs/ARCHITECTURE.md
+
+Document:
+
+Frontend
+↓
+Routing
+↓
+Query/State Layer
+↓
+API/Application Layer
+↓
+Supabase/PostgreSQL
+↓
+Supabase Storage
+
+Explain:
+
+- authentication flow
+- video upload flow
+- video playback flow
+- follow flow
+- playlist flow
+- watch history flow
+- analytics/view tracking
+- Discover/Search data flow
+
+Also document which parts are provider-specific.
+
+==================================================
+13. DEPLOYMENT DOCUMENTATION
+==================================================
+
+Create:
+
+docs/DEPLOYMENT.md
+
+Explain how to deploy Moonirat to:
+
+A. Replit
+B. Docker
+C. Generic VPS
+
+The documentation must make it clear that Replit is only one deployment target.
+
+For a future VPS migration, provide the conceptual process:
+
+1. Provision server
+2. Install runtime
+3. Clone repository
+4. Configure environment variables
+5. Install dependencies
+6. Run database migrations
+7. Build
+8. Start production server
+9. Configure reverse proxy
+10. Configure HTTPS
+11. Point Moonirat.space DNS to the new server
+
+Do not perform a DNS migration now.
+
+==================================================
+14. DEVELOPER CONTRIBUTION STANDARD
+==================================================
+
+Create:
+
+CONTRIBUTING.md
+
+Define:
+
+- branch strategy
+- commit expectations
+- coding conventions
+- TypeScript rules
+- database migration rules
+- Supabase rules
+- environment-variable rules
+- testing expectations
+- build validation
+- pull request expectations
+
+A developer should be able to understand how to safely contribute without asking the original developer for basic instructions.
+
+==================================================
+15. HEALTH CHECK
+==================================================
+
+Add a simple production-safe health check if the existing architecture supports it.
+
+It should verify application availability without exposing secrets.
+
+Do not expose:
+
+- database credentials
+- Supabase service-role keys
+- environment variables
+- internal secrets
+
+==================================================
+16. REPOSITORY CLEANUP
+==================================================
+
+Remove:
+
+- dead Replit-specific code
+- obsolete configuration
+- duplicated deployment scripts
+- unnecessary provider-specific assumptions
+- temporary sandbox workarounds
+
+Do NOT remove anything that is required by the current Replit deployment without replacing it with a portable equivalent.
+
+==================================================
+17. MOONIRAT V1 PROTECTION
+==================================================
+
+All existing V1 functionality must remain intact:
+
+- Authentication
+- Artist profiles
+- Video upload
+- Real Supabase Storage
+- Video playback
+- HLS
+- Discover
+- Search
+- Follow
+- Playlists
+- Watch History
+- View tracking
+- Analytics
+- Up Next
+- Auto Advance
+- Global genres
+- Afrobeats
+- Amapiano
+
+Do not introduce:
+
+- AI
+- monetization
+- advertisements
+- comments
+- microservices
+- unnecessary recommendation infrastructure
+- unrelated V2 features
+
+==================================================
+18. VALIDATION
+==================================================
+
+After making changes, run:
+
+bun run typecheck
+bun run build
+
+Also verify:
+
+- development server starts
+- production server starts
+- environment variables work
+- Supabase connection works
+- authentication works
+- storage works
+- video playback works
+- existing routes work
+- SSR works
+- no hydration errors
+- no Replit-specific runtime dependency remains unless explicitly documented
+- no secrets are committed
+- no new circular chunk warnings
+
+If typecheck/build are killed by the current environment:
+
+DO NOT fake a successful result.
+
+Report the exact infrastructure limitation and continue validating everything else that can be safely validated.
+
+==================================================
+FINAL DELIVERABLE
+==================================================
+
+Return:
+
+1. Replit dependencies found
+2. Replit dependencies removed
+3. Portable architecture changes
+4. Environment variables
+5. Files created
+6. Files modified
+7. Docker support status
+8. Database migration strategy
+9. Storage abstraction status
+10. Developer documentation status
+11. Local development instructions
+12. Replit deployment instructions
+13. Generic VPS deployment instructions
+14. Security findings
+15. Typecheck result
+16. Build result
+17. Regression test result
+
+Finally answer:
+
+"Could a competent developer move Moonirat from Replit to a standard VPS without rewriting the application?"
+
+The goal is:
+
+YES — with configuration/deployment changes only, not application rewrites.
+
+Do not claim YES unless the repository actually satisfies that requirement.

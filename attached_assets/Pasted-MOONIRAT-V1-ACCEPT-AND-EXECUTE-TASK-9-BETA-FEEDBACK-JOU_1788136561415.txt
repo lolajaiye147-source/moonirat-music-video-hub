@@ -1,0 +1,293 @@
+MOONIRAT V1 — ACCEPT AND EXECUTE TASK #9: BETA FEEDBACK JOURNEY
+
+Accept and assign Task #9 — Complete Moonirat Beta Feedback Journey now.
+
+This task is a required V1 controlled-beta readiness item.
+
+OBJECTIVE
+
+Complete and certify the existing Moonirat feedback journey for all three user groups:
+
+* 👀 Viewers / fans
+* 🎤 Creators / artists
+* 🛡️ Admins
+
+The goal is:
+
+Submit Feedback → Persist in Supabase → User Can Track It → Admin Reviews → Admin Updates Status → User Sees Updated Status
+
+IMPORTANT ARCHITECTURE RULE
+
+Use the existing Moonirat architecture only:
+
+* TanStack Start
+* React
+* TanStack Router
+* Supabase Auth
+* Supabase PostgreSQL
+* Supabase Storage where already required
+* Supabase Realtime where already implemented
+* Existing RLS
+* Existing migrations
+* Existing feedback tables/components/routes
+
+DO NOT:
+
+* Create another database
+* Provision another backend
+* Introduce Replit Postgres
+* Introduce a new authentication system
+* Add microservices
+* Add monetization
+* Add ads
+* Add AI
+* Add comments
+* Add unrelated features
+* Redesign unrelated parts of Moonirat
+
+FIRST — SEARCH THE REPOSITORY
+
+Before modifying anything:
+
+1. Search the complete repository.
+2. Find the existing feedback migration.
+3. Find feedback_submissions.
+4. Find the existing feedback UI.
+5. Find the /feedback route.
+6. Find the admin feedback interface.
+7. Inspect existing RLS policies.
+8. Inspect Supabase Realtime configuration.
+9. Inspect existing notification/status patterns.
+10. Check whether Task #9 is partially implemented already.
+
+Do not duplicate existing functionality.
+
+VIEWER / FAN JOURNEY
+
+Verify and fix:
+
+1. Signed-out users see an appropriate feedback entry point.
+2. Authenticated viewers can submit feedback.
+3. Feedback types work:
+    * Bug
+    * Feature
+    * Upload Issue
+    * Playback Issue
+    * Verification
+    * Search/Discovery
+    * General
+4. Subject is required.
+5. Message is required.
+6. Input limits are enforced.
+7. Submission is persisted to Supabase.
+8. Successful submission produces a real success state.
+9. User can open My Feedback.
+10. User can see only their own feedback.
+11. User can view current status.
+12. User can view admin response/notes when appropriate.
+
+CREATOR JOURNEY
+
+Verify that creators/artists can:
+
+1. Open feedback.
+2. Submit creator-specific issues.
+3. Report upload problems.
+4. Report playback problems.
+5. Report verification problems.
+6. Submit feature requests.
+7. See their submissions.
+8. Track status changes.
+9. Receive the appropriate status update through the existing notification/realtime system where already implemented.
+
+Do not create a separate creator feedback system.
+
+ADMIN JOURNEY
+
+Verify that authorized admins can:
+
+1. View feedback submissions.
+2. Search feedback.
+3. Filter by status.
+4. Filter by type.
+5. View priority.
+6. Open the complete submission.
+7. Add admin notes.
+8. Change status:
+    * open
+    * reviewing
+    * planned
+    * resolved
+    * closed
+9. Save changes to Supabase.
+10. Confirm the user can see the updated status.
+
+All admin writes must be protected by real authorization.
+
+Client-side checks alone are NOT sufficient.
+
+RLS SECURITY
+
+Test:
+
+User A
+
+Can:
+
+* Create their own feedback.
+* Read their own feedback.
+* See updates to their own feedback.
+
+Cannot:
+
+* Read User B’s feedback.
+* Modify User B’s feedback.
+* Delete User B’s feedback.
+
+Admin
+
+Can:
+
+* Read appropriate feedback.
+* Update status.
+* Add admin notes.
+
+Unauthorized user
+
+Cannot perform admin feedback actions.
+
+Do not weaken existing RLS to make tests pass.
+
+REALTIME
+
+If the existing system uses Supabase Realtime:
+
+Verify:
+
+Admin changes status → User receives updated status without manually refreshing.
+
+If Realtime is already correctly implemented, preserve it.
+
+Do not introduce polling as a replacement.
+
+DATA INTEGRITY
+
+Verify:
+
+* No fake feedback arrays.
+* No fake success timers.
+* No local-only persistence.
+* No hardcoded admin responses.
+* No fake status changes.
+* No duplicate submissions caused by repeated clicks.
+* Correct user_id.
+* Correct timestamps.
+* Correct status transitions.
+
+ERROR HANDLING
+
+Test:
+
+* Supabase unavailable.
+* Invalid submission.
+* Unauthorized submission.
+* Database error.
+* Empty feedback list.
+* Loading state.
+* Successful submission.
+* Failed submission.
+
+Every state must be understandable to the user.
+
+MOBILE
+
+Test the feedback journey on mobile layouts.
+
+Verify:
+
+* Feedback button does not cover bottom navigation.
+* Form is scrollable.
+* Keyboard does not hide the submit button.
+* Inputs are touch-friendly.
+* Status cards are readable.
+* No horizontal overflow.
+
+PRODUCTION SAFETY
+
+Do not expose:
+
+* Supabase service-role keys.
+* Private credentials.
+* Verification documents.
+* Another user’s feedback.
+
+Use the existing public/publishable Supabase key architecture in the browser.
+
+VALIDATION
+
+Run:
+
+* TypeScript
+* Production build
+* Route validation
+* Supabase/RLS checks
+* Browser end-to-end testing
+* Viewer feedback journey
+* Creator feedback journey
+* Admin feedback journey
+
+Do not report PASS based only on code inspection.
+
+FINAL REPORT
+
+Create/update:
+
+MOONIRAT_V1_BETA_FEEDBACK_CERTIFICATION.md
+
+Include:
+
+VIEWER_FEEDBACK:
+CREATOR_FEEDBACK:
+ADMIN_FEEDBACK:
+SUPABASE_PERSISTENCE:
+RLS_ISOLATION:
+STATUS_UPDATES:
+REALTIME:
+ERROR_HANDLING:
+MOBILE:
+TYPECHECK:
+BUILD:
+P0_BLOCKERS:
+P1_BLOCKERS:
+WARNINGS:
+MANUAL_ACTIONS:
+BETA_FEEDBACK_JOURNEY:
+FINAL_STATUS:
+
+Use only:
+
+PASS
+CONDITIONAL_PASS
+WARN
+FAIL
+MANUAL_ACTION_REQUIRED
+
+STOP CONDITION
+
+After Task #9 is complete:
+
+STOP.
+
+Do NOT begin the Controlled Public Beta Readiness & Launch Gate.
+
+Do NOT start new features.
+
+Do NOT start monetization.
+
+Do NOT start ads.
+
+Do NOT start AI.
+
+Do NOT expand the product.
+
+Return a concise implementation and certification report so the next step can be the final Controlled Public Beta Readiness & Launch Gate.

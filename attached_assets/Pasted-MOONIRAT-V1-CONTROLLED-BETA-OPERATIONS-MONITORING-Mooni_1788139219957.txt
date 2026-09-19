@@ -1,0 +1,291 @@
+MOONIRAT V1 — CONTROLLED BETA OPERATIONS & MONITORING
+
+Moonirat V1 has completed the final stabilization gate.
+
+Current certified status:
+
+V1_STATUS: CONDITIONAL_PASS
+PUBLIC_BETA_READY: CONDITIONAL_PASS
+FINAL_RECOMMENDATION: CONDITIONAL_PASS
+
+Moonirat is approved for a SMALL CONTROLLED BETA, not a wide public launch.
+
+IMPORTANT:
+This is now an OPERATIONS AND VALIDATION phase.
+
+Do NOT introduce new V1 features.
+Do NOT start V1.1 feature development.
+Do NOT add monetization, ads, AI, comments, microservices, Stripe, recommendation engines, or speculative infrastructure.
+Do NOT replace Supabase.
+Do NOT provision another database.
+Do NOT rewrite the existing architecture.
+
+Current documented conditions:
+
+LEAKED_PASSWORD_PROTECTION: MANUAL_ACTION_REQUIRED
+MP4_BROWSER_MATRIX: MANUAL_ACTION_REQUIRED
+SUPABASE_RATE_LIMITING: WARN
+PERFORMANCE: WARN
+HYDRATION_WARNINGS: NON_BLOCKING
+LOVABLE_SCAFFOLDING: PORTABILITY_WARNING
+
+Treat these honestly. Never manufacture PASS results.
+
+PHASE 1 — BETA FREEZE
+
+Create:
+
+MOONIRAT_V1_CONTROLLED_BETA_FREEZE.md
+
+Record the exact V1 feature set being frozen.
+
+The frozen product loop is:
+
+VIEWER:
+Discover → Search → Watch → Follow → Playlist → Feedback
+
+CREATOR:
+Create Artist Profile → Upload → Publish → Dashboard → Analytics → Verification → Feedback
+
+ADMIN:
+Authenticate → Verify Creators → Moderate Videos → Review Feedback → Audit
+
+No new product functionality should be added unless a real beta blocker is discovered.
+
+PHASE 2 — BETA SAFETY CHECK
+
+Before opening the beta, verify:
+
+* Supabase environment variables
+* Authentication
+* RLS
+* Storage policies
+* admin authorization
+* feedback ownership
+* creator ownership
+* video ownership
+* playlist ownership
+* watch-history isolation
+* moderation authorization
+* verification authorization
+* service-role isolation
+* upload recovery
+* Storage cleanup
+* qualified view tracking
+* pagination
+* invalid media handling
+* mobile navigation
+* logout/login behavior
+
+Use real Supabase data only.
+
+PHASE 3 — CONTROLLED BETA CONFIGURATION
+
+Design the beta for a LIMITED group.
+
+Recommended initial cohort:
+
+* 10–25 creators
+* 50–100 viewers/followers
+* invitation-only access
+* controlled onboarding
+* active feedback collection
+
+Do NOT open unrestricted public registration yet.
+
+If the existing application does not support invitation-only access, DO NOT invent a large new system just for this. Document the limitation and recommend the safest existing approach.
+
+PHASE 4 — BETA OBSERVABILITY
+
+Verify that the existing system can accurately measure:
+
+* signups
+* active users
+* creator profiles created
+* videos uploaded
+* videos published
+* video starts
+* qualified views
+* watch completion where already supported
+* follows
+* playlist creation
+* feedback submissions
+* verification applications
+* moderation actions
+* upload failures
+* playback failures
+
+Do not add unnecessary analytics infrastructure.
+
+Use existing Supabase tables/events where possible.
+
+PHASE 5 — REAL USER VALIDATION
+
+During the beta, monitor the complete real-world journeys.
+
+VIEWERS:
+
+Signup → Discover → Search → Watch → Follow → Playlist → Feedback
+
+CREATORS:
+
+Signup → Artist Profile → Upload → Publish → Dashboard → Analytics → Verification
+
+ADMINS:
+
+Review creators → Moderate content → Respond to feedback → Audit activity
+
+Record actual failures rather than assuming success.
+
+PHASE 6 — BETA METRICS
+
+Create:
+
+MOONIRAT_V1_CONTROLLED_BETA_METRICS.md
+
+Track:
+
+Users:
+
+* invited users
+* activated users
+* weekly active users
+* returning users
+
+Creators:
+
+* creators onboarded
+* creators who upload
+* creators who upload repeatedly
+* videos uploaded
+* videos published
+
+Viewers:
+
+* videos watched
+* qualified views
+* follows
+* playlists
+* returning viewers
+
+Reliability:
+
+* upload failures
+* playback failures
+* authentication failures
+* HTTP errors
+* feedback complaints
+
+Engagement:
+
+* creator retention
+* viewer retention
+* follow conversion
+* repeat uploads
+* repeat viewing
+
+Do not fabricate metrics where there is insufficient data.
+
+Use:
+
+NOT_ENOUGH_DATA
+
+when appropriate.
+
+PHASE 7 — ISSUE TRIAGE
+
+Create a strict classification:
+
+P0 = security, data loss, app unusable
+P1 = core viewer/creator journey broken
+P2 = important usability/reliability problem
+P3 = cosmetic or minor improvement
+
+Only P0/P1 issues authorize immediate engineering changes during the beta.
+
+P2/P3 issues should be collected and reviewed after sufficient beta evidence.
+
+PHASE 8 — REMAINING MANUAL ITEMS
+
+Do not falsely close:
+
+LEAKED_PASSWORD_PROTECTION
+
+until it is actually enabled in Supabase.
+
+Do not falsely close:
+
+MP4_BROWSER_MATRIX
+
+until real supported browsers have been tested.
+
+For:
+
+SUPABASE_RATE_LIMITING
+
+monitor whether normal individual signup attempts still receive HTTP 429.
+
+For:
+
+PERFORMANCE
+
+measure actual beta behavior before making architectural changes.
+
+PHASE 9 — BETA EXIT GATE
+
+After sufficient real beta usage, generate:
+
+MOONIRAT_V1_CONTROLLED_BETA_EXIT_REPORT.md
+
+Use:
+
+BETA_STATUS:
+ACTIVE_USERS:
+CREATORS:
+VIDEOS:
+QUALIFIED_VIEWS:
+FOLLOW_CONVERSION:
+CREATOR_RETENTION:
+VIEWER_RETENTION:
+UPLOAD_RELIABILITY:
+PLAYBACK_RELIABILITY:
+AUTH_RELIABILITY:
+FEEDBACK_STATUS:
+P0_ISSUES:
+P1_ISSUES:
+P2_ISSUES:
+P3_ISSUES:
+SECURITY_STATUS:
+PERFORMANCE_STATUS:
+RECOMMENDATION:
+
+Possible final recommendations:
+
+EXTEND_CONTROLLED_BETA
+READY_FOR_WIDER_BETA
+READY_FOR_PUBLIC_LAUNCH
+RETURN_TO_STABILIZATION
+
+Do not recommend a wide launch simply because the code works.
+
+Require evidence from real users.
+
+FINAL RULE:
+
+Moonirat V1 is now a product-validation phase.
+
+The goal is NOT to keep building.
+
+The goal is to prove:
+
+1. Viewers return.
+2. Viewers watch.
+3. Viewers follow creators.
+4. Creators upload.
+5. Creators return and upload again.
+6. The platform remains reliable under real usage.
+7. Users report problems and the team can resolve them.
+
+Only build when real beta evidence shows something needs to be fixed.
+
+STOP after completing the beta operations audit and documentation.

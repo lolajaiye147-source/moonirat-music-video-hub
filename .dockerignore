@@ -1,0 +1,11 @@
+.git
+.local
+.agents
+attached_assets
+node_modules
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example

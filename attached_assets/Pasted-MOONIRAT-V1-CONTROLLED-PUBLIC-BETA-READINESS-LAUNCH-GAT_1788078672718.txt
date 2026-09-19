@@ -1,0 +1,545 @@
+MOONIRAT V1 — CONTROLLED PUBLIC BETA READINESS & LAUNCH GATE
+
+This is the FINAL controlled readiness and launch-gate pass for Moonirat V1.
+
+The purpose of this task is to determine whether the existing Moonirat V1 is genuinely ready for a controlled Public Beta.
+
+DO NOT add new product features.
+
+DO NOT expand the V1 scope.
+
+DO NOT redesign the architecture.
+
+DO NOT provision another database.
+
+DO NOT replace the existing Supabase project.
+
+DO NOT create duplicate tables, indexes, policies, users, or storage buckets.
+
+Use the existing Moonirat repository and existing live Supabase project as the source of truth.
+
+⸻
+
+CURRENT VERIFIED BASELINE
+
+The previous production hardening pass has already completed:
+
+* Discovery/search indexes verified
+* Missing moderation_actions_actor_id_idx created and verified
+* Durable 3-second view threshold
+* 24-hour authenticated + anonymous cooldown
+* Seeking/buffering resistance
+* Direct video-view table inserts blocked
+* Recoverable/idempotent uploads
+* Real upload progress
+* Bounded upload retries
+* Server-authorized video Storage cleanup
+* Thumbnail Storage cleanup
+* Moderation auditing
+* Stable Discover pagination
+* Stable Search pagination
+* Codec-specific playback errors
+* Lazy-loaded HLS.js
+* TanStack Start SSR preserved
+* File-based routing preserved
+* Supabase architecture preserved
+* Existing RLS preserved
+* TypeScript PASS
+* Production SSR build PASS
+* Disposable test data removed
+* Temporary WebM media removed
+
+Current gate:
+
+V1_STATUS: CONDITIONAL_PASS
+VIEW_TRACKING: PASS
+UPLOAD_RECOVERY: PASS
+STORAGE_CLEANUP: PASS
+DISCOVERY_SCALE: PASS
+TYPECHECK: PASS
+BUILD: PASS
+LEAKED_PASSWORD_PROTECTION: MANUAL_ACTION_REQUIRED
+MP4_COMPATIBILITY: BROWSER_LIMITATION
+PUBLIC_BETA_READY: NO
+
+⸻
+
+PHASE 1 — REPOSITORY & ARCHITECTURE FREEZE
+
+Before changing anything:
+
+Inspect the repository and confirm:
+
+Frontend:
+
+* TanStack Start
+* React
+* file-based routing
+
+Backend/data:
+
+* Supabase Auth
+* Supabase PostgreSQL
+* Supabase Storage
+* Supabase RLS
+* existing Realtime usage
+
+Confirm there is no accidental return to:
+
+* Replit Postgres
+* duplicate backend
+* duplicate authentication system
+* duplicate database
+* legacy frontend
+* mock production data
+
+Do not change architecture.
+
+⸻
+
+PHASE 2 — SUPABASE SECURITY GATE
+
+Inspect the existing live Supabase project.
+
+Verify:
+
+* RLS enabled on all user-sensitive tables
+* ordinary users cannot access admin operations
+* creators can only modify their own content
+* viewers cannot modify another user’s content
+* Storage policies are correctly scoped
+* verification operations are admin-authorized
+* moderation operations are admin-authorized
+* service-role credentials are never exposed to the browser
+* no production secret is committed to Git
+* authentication configuration is secure
+
+LEAKED PASSWORD PROTECTION
+
+Check the current Supabase Auth configuration.
+
+If leaked-password protection is already enabled:
+
+Mark:
+
+LEAKED_PASSWORD_PROTECTION: PASS
+
+If it is not enabled:
+
+Do NOT pretend it is fixed.
+
+If the available tooling can safely enable it in the existing Supabase project, do so and verify it.
+
+If it requires a Supabase Dashboard action, stop and clearly report:
+
+LEAKED_PASSWORD_PROTECTION: MANUAL_ACTION_REQUIRED
+
+Provide the exact Supabase Dashboard setting that must be enabled.
+
+Do not make unrelated Auth changes.
+
+⸻
+
+PHASE 3 — CORE CREATOR JOURNEY
+
+Test the real creator journey against the existing Supabase project.
+
+Creator:
+
+Sign up
+→ authenticate
+→ create artist profile
+→ upload avatar
+→ upload music video
+→ upload thumbnail
+→ observe real upload progress
+→ survive a retry/recovery scenario
+→ create video record
+→ video becomes discoverable
+→ edit video
+→ view dashboard
+→ view analytics
+→ apply for verification
+
+Verify every state:
+
+* loading
+* success
+* empty
+* failure
+* retry
+* unauthorized
+
+Confirm no fake timers, mock arrays, placeholder database writes, or simulated success remain in the production journey.
+
+⸻
+
+PHASE 4 — VIEWER / FOLLOWER JOURNEY
+
+Moonirat is NOT only an artist platform.
+
+Treat viewers and followers as first-class V1 users.
+
+Test:
+
+Viewer opens Moonirat
+→ Discover
+→ Search
+→ artist profile
+→ video page
+→ playback
+→ view threshold
+→ follow artist
+→ save video
+→ playlist
+→ return to video
+→ resume playback
+
+Verify:
+
+* follow persists
+* unfollow persists
+* playlists persist
+* likes persist if included in current V1
+* watch history behaves correctly
+* resume playback behaves correctly
+* view cooldown works
+* repeated refresh does not inflate views
+* seeking does not manufacture views
+* anonymous viewing follows intended rules
+
+Do not introduce new social features.
+
+⸻
+
+PHASE 5 — PUBLIC DISCOVERY
+
+Validate:
+
+Home
+Discover
+Search
+Artist pages
+Video pages
+Related videos
+
+Test:
+
+* pagination
+* stable ordering
+* duplicate prevention
+* empty results
+* invalid searches
+* slow/network failure
+* retry
+* mobile scrolling
+* verified artist badges
+* featured artists
+* public/private video visibility
+
+Confirm no entire-table loading remains where pagination is required.
+
+⸻
+
+PHASE 6 — VIDEO PLAYBACK GATE
+
+Do NOT introduce permanent transcoding or WebM merely to compensate for a restricted test browser.
+
+The known production media format is:
+
+H.264/AAC MP4.
+
+Validate supported environments where available:
+
+* Chrome desktop
+* Firefox desktop
+* Safari desktop
+* Safari/iOS
+* Chrome/Android
+
+Validate:
+
+* MP4 playback
+* HTTP range seeking
+* buffering
+* resume
+* fullscreen
+* volume
+* mute
+* keyboard controls where supported
+* mobile controls
+* playback errors
+* retry
+* view threshold
+* HLS.js lazy loading when master_playlist_url exists
+* native HLS where supported
+* direct MP4 fallback
+
+If the restricted browser cannot decode the valid H.264/AAC media:
+
+record:
+
+MP4_COMPATIBILITY: BROWSER_LIMITATION
+
+Do not falsely classify valid media as broken.
+
+Do not build a permanent WebM pipeline.
+
+⸻
+
+PHASE 7 — ADMIN & MODERATION GATE
+
+Test:
+
+Admin login
+→ admin dashboard
+→ verification queue
+→ approve/reject/request information
+→ video moderation
+→ remove video
+→ Storage cleanup
+→ moderation audit
+
+Verify ordinary users cannot:
+
+* access admin pages
+* approve artists
+* reject artists
+* delete another creator’s videos
+* delete arbitrary Storage objects
+* modify moderation records
+
+Verify removal cleans:
+
+* database record
+* video object
+* thumbnail object
+* related references where applicable
+
+Verify moderation auditing remains intact.
+
+⸻
+
+PHASE 8 — FEEDBACK & BETA OPERATIONS
+
+Verify the existing beta feedback system.
+
+Test:
+
+Viewer submits feedback
+Creator submits feedback
+Bug report
+Feature request
+Playback issue
+Upload issue
+Verification issue
+
+Admin:
+
+* sees submission
+* filters
+* changes status
+* adds notes
+* resolves/ closes issue
+
+Confirm RLS prevents users from viewing another user’s private feedback.
+
+Do not expand the feedback system.
+
+⸻
+
+PHASE 9 — FAILURE & RECOVERY TEST
+
+Intentionally test safe failure scenarios:
+
+* invalid video ID
+* deleted video
+* failed image upload
+* interrupted upload
+* expired session
+* unauthorized admin access
+* empty database
+* empty Discover
+* empty Search
+* network interruption
+* playback failure
+* Storage object missing
+
+Every failure must result in a controlled UI state.
+
+No blank screens.
+
+No unhandled exceptions.
+
+No fake success messages.
+
+⸻
+
+PHASE 10 — PERFORMANCE & SCALE CHECK
+
+Review:
+
+* database indexes
+* RLS performance
+* pagination
+* query counts
+* image loading
+* video loading
+* route-level code splitting
+* HLS.js lazy loading
+* SSR performance
+
+Do not optimize speculative problems.
+
+Only fix measurable production issues.
+
+⸻
+
+PHASE 11 — PRODUCTION BUILD & SECURITY CHECK
+
+Run:
+
+* TypeScript
+* production build
+* SSR validation
+* route validation
+* Supabase connectivity
+* RLS checks
+* Storage policy checks
+* browser regression
+* mobile regression where available
+
+Expected:
+
+TYPECHECK: PASS
+BUILD: PASS
+SSR: PASS
+RLS: PASS
+STORAGE_SECURITY: PASS
+CORE_E2E: PASS
+
+⸻
+
+PHASE 12 — FINAL LAUNCH DECISION
+
+Update:
+
+MOONIRAT_V1_FINAL_PRODUCTION_GATE.md
+
+Use exactly these fields:
+
+V1_STATUS:
+VIEW_TRACKING:
+UPLOAD_RECOVERY:
+STORAGE_CLEANUP:
+DISCOVERY_SCALE:
+TYPECHECK:
+BUILD:
+SSR:
+RLS_SECURITY:
+STORAGE_SECURITY:
+LEAKED_PASSWORD_PROTECTION:
+MP4_COMPATIBILITY:
+CREATOR_JOURNEY:
+VIEWER_JOURNEY:
+ADMIN_JOURNEY:
+FEEDBACK_JOURNEY:
+PUBLIC_BETA_READY:
+
+Use only:
+
+PASS
+FAIL
+CONDITIONAL_PASS
+MANUAL_ACTION_REQUIRED
+BROWSER_LIMITATION
+
+⸻
+
+LAUNCH RULE
+
+Set:
+
+PUBLIC_BETA_READY: YES
+
+ONLY when:
+
+1. No unresolved P0 security issue exists.
+2. Authentication is secure.
+3. RLS authorization passes.
+4. Storage authorization passes.
+5. View tracking passes.
+6. Upload/recovery passes.
+7. Discovery/search passes.
+8. Creator journey passes.
+9. Viewer/follower journey passes.
+10. Admin moderation passes.
+11. Production build passes.
+12. Supported-browser playback passes.
+13. Leaked Password Protection is enabled or explicitly confirmed safe according to the current Supabase configuration.
+14. No known critical data-loss or data-integrity issue remains.
+
+If any requirement fails:
+
+PUBLIC_BETA_READY: NO
+
+Do not lower the standard to force a PASS.
+
+⸻
+
+IMPORTANT — NO FEATURE CREEP
+
+After this audit, do NOT recommend:
+
+* monetization
+* tips
+* ads
+* comments
+* AI
+* recommendation engines
+* microservices
+* unnecessary HLS infrastructure
+* advanced creator CRM
+* complex social features
+
+Moonirat V1 is already feature-complete for the controlled beta objective.
+
+The objective now is:
+
+VERIFY → HARDEN → CERTIFY → CONTROLLED PUBLIC BETA
+
+not:
+
+BUILD → BUILD → BUILD
+
+⸻
+
+FINAL REPORT
+
+At the end provide only:
+
+1. PASS
+
+Everything verified successfully.
+
+2. WARNINGS
+
+Non-critical issues that do not block controlled beta.
+
+3. MANUAL ACTIONS
+
+Anything that must be completed in Supabase Dashboard or another external environment.
+
+4. BLOCKERS
+
+Only genuine launch blockers.
+
+5. FINAL DECISION
+
+PUBLIC_BETA_READY: YES / NO
+
+If YES, provide the exact remaining operational steps for opening a controlled beta.
+
+If NO, identify the smallest set of actions required to reach YES.
+
+Do not start another feature after this report.

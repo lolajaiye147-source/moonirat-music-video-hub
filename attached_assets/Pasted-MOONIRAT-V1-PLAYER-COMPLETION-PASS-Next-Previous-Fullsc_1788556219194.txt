@@ -1,0 +1,431 @@
+MOONIRAT V1 — PLAYER COMPLETION PASS
+
+Next / Previous • Fullscreen • TV Casting
+
+Moonirat V1 is currently in controlled-beta stabilization.
+
+The core application is working progressively and the production architecture is frozen.
+
+This task is a focused improvement to the existing Moonirat video player.
+
+Do NOT redesign Moonirat.
+Do NOT introduce a second backend.
+Do NOT change Supabase architecture.
+Do NOT add monetization, ads, comments, AI, microservices, transcoding, or alternate video formats.
+
+The existing validated H.264/AAC MP4 remains the V1 video format.
+
+⸻
+
+PHASE 1 — INSPECT BEFORE CHANGING
+
+First inspect the existing:
+
+* MooniratPlayer component
+* VideoDetail route
+* video query/data model
+* Home feed
+* Discover feed
+* related videos
+* current playback/resume logic
+* current view-tracking logic
+* current fullscreen implementation, if any
+* existing route/navigation patterns
+* mobile player controls
+* any existing Media Session API usage
+* any existing Chromecast/AirPlay/casting code
+
+Do not duplicate functionality that already exists.
+
+Preserve existing working behavior.
+
+⸻
+
+PHASE 2 — NEXT / PREVIOUS VIDEO
+
+Add reliable:
+
+* Previous
+* Next
+
+controls to the video player.
+
+The controls must use the CURRENT REAL DATA QUEUE, not hardcoded videos.
+
+The queue should be derived from the context in which the user opened the video where possible:
+
+* Home feed
+* Discover results
+* Search results
+* Related videos
+* Following feed, if available
+
+When there is a valid next video:
+
+NEXT → navigate to the next real video.
+
+When there is a valid previous video:
+
+PREVIOUS → navigate to the previous real video.
+
+If no next/previous item exists:
+
+* disable the appropriate control
+* do not create fake navigation
+* do not loop to unrelated content
+
+Do not manufacture a queue just to make the buttons appear functional.
+
+⸻
+
+PHASE 3 — AUTO-ADVANCE
+
+When a video reaches its natural end:
+
+If another video exists in the current queue:
+
+→ automatically advance to the next video.
+
+If there is no next video:
+
+→ remain on the current video/end state.
+
+Do not automatically start unrelated content.
+
+Respect user interaction and browser autoplay restrictions.
+
+Do not create an autoplay loop.
+
+⸻
+
+PHASE 4 — FULLSCREEN
+
+Implement a proper fullscreen experience using the browser Fullscreen API where supported.
+
+Requirements:
+
+* Fullscreen button visible in the player controls
+* Enter fullscreen
+* Exit fullscreen
+* Correct icon/state change
+* Works on desktop
+* Works on supported mobile browsers
+* Player remains usable in landscape where supported
+* Controls remain accessible
+* No horizontal overflow
+* Escape exits fullscreen where supported
+
+Use the existing player rather than creating a second player.
+
+Do not break:
+
+* playback
+* seeking
+* resume
+* view tracking
+* volume
+* captions if already supported
+* playback speed if already supported
+
+⸻
+
+PHASE 5 — TV CASTING
+
+Add casting support progressively without introducing a new backend or video-processing pipeline.
+
+Support standards/platform APIs where available.
+
+Chromecast
+
+If the browser/device supports the Google Cast Web Sender SDK:
+
+* expose a Cast/TV button
+* allow the user to select an available Cast device
+* send the current real Moonirat video URL
+* preserve the video title and relevant metadata where supported
+* handle connection/disconnection gracefully
+* handle unavailable Cast API gracefully
+
+Do NOT make Chromecast a hard dependency for Moonirat.
+
+AirPlay
+
+Where Safari/WebKit exposes AirPlay support:
+
+* expose the native AirPlay route/button
+* use the existing real media source
+* do not build a custom AirPlay implementation
+
+Unsupported environments
+
+If casting is unavailable:
+
+* hide or disable the casting control appropriately
+* do not show a broken button
+* do not show a fake “TV connected” state
+
+Do not attempt to circumvent browser/device restrictions.
+
+⸻
+
+PHASE 6 — MOBILE UX
+
+Test the player at approximately:
+
+375×812
+
+and desktop widths.
+
+Verify:
+
+* controls are reachable
+* Next/Previous buttons do not overlap
+* Fullscreen works where supported
+* Cast/AirPlay controls do not break the control bar
+* player does not cause horizontal scrolling
+* bottom navigation does not cover player controls
+* touch targets are appropriately sized
+
+⸻
+
+PHASE 7 — PRESERVE EXISTING V1 BEHAVIOR
+
+This is critical.
+
+Do not break or rewrite the existing:
+
+* Supabase authentication
+* RLS
+* video queries
+* Storage URLs
+* upload recovery
+* Storage cleanup
+* qualified view tracking
+* 3-second view threshold
+* 24-hour cooldown
+* seeking/buffering resistance
+* playback resume
+* discovery pagination
+* search pagination
+* admin moderation
+* feedback system
+* creator verification
+
+The player enhancement must integrate with the current architecture.
+
+⸻
+
+PHASE 8 — VIEW TRACKING
+
+Changing videos through Next/Previous must correctly reset the video-specific playback/view state.
+
+Verify:
+
+Video A
+→ qualifies for a view
+
+Next
+→ Video B
+
+Video B must independently evaluate its own:
+
+* playback start
+* 3-second threshold
+* cooldown
+* resume position
+
+Do not accidentally attribute Video B’s view to Video A.
+
+⸻
+
+PHASE 9 — RESUME PLAYBACK
+
+Verify:
+
+Video A
+→ watch partially
+→ leave
+
+Return to Video A
+→ resume from the existing saved position.
+
+Next/Previous navigation must not corrupt resume state between videos.
+
+⸻
+
+PHASE 10 — ACCESSIBILITY
+
+Provide:
+
+* accessible labels
+* keyboard support where applicable
+* visible focus states
+* appropriate disabled states
+* tooltips where useful
+
+Examples:
+
+“Previous video”
+“Next video”
+“Enter fullscreen”
+“Exit fullscreen”
+“Cast to TV”
+
+Do not rely only on icons.
+
+⸻
+
+PHASE 11 — ERROR HANDLING
+
+Casting errors must not crash playback.
+
+Fullscreen errors must not crash playback.
+
+Next/Previous navigation errors must return the user safely to the current video or an appropriate fallback.
+
+Never fabricate successful casting.
+
+Never fabricate successful playback.
+
+Use truthful UI states.
+
+⸻
+
+PHASE 12 — TEST MATRIX
+
+Test at minimum:
+
+Desktop
+
+* Chrome
+* Safari where available
+* Firefox
+
+Mobile
+
+* iOS Safari
+* Android Chrome
+
+Test:
+
+1. Play
+2. Pause
+3. Seek
+4. Resume
+5. Next
+6. Previous
+7. End-of-video auto-advance
+8. Fullscreen
+9. Exit fullscreen
+10. Cast when supported
+11. AirPlay when supported
+12. Unsupported casting environment
+13. Invalid video
+14. View threshold
+15. 24-hour cooldown
+16. Mobile controls
+
+Do not claim Cast/AirPlay PASS if the testing environment does not support it.
+
+Record:
+
+NEXT_PREVIOUS: PASS/WARN/FAIL
+AUTO_ADVANCE: PASS/WARN/FAIL
+FULLSCREEN: PASS/WARN/FAIL
+CHROMECAST: PASS/WARN/FAIL/NOT_AVAILABLE
+AIRPLAY: PASS/WARN/FAIL/NOT_AVAILABLE
+MOBILE_PLAYER: PASS/WARN/FAIL
+VIEW_TRACKING: PASS/WARN/FAIL
+RESUME: PASS/WARN/FAIL
+
+⸻
+
+PHASE 13 — BUILD VALIDATION
+
+After implementation:
+
+* TypeScript check
+* Production build
+* SSR validation
+* Browser smoke test
+* Mobile smoke test
+* Browser console check
+* Network error check
+
+Confirm no new:
+
+* 401
+* 403
+* 404
+* 429
+* 500
+
+errors are introduced by this task.
+
+⸻
+
+HARD SCOPE LIMIT
+
+This is a PLAYER COMPLETION PASS only.
+
+Do NOT add:
+
+* HLS migration
+* WebM derivatives
+* transcoding
+* video processing service
+* new backend
+* new database
+* monetization
+* ads
+* comments
+* AI
+* social messaging
+* recommendation engine
+
+Do not reopen the V1 production architecture.
+
+If Chromecast requires an external SDK, use the official supported browser integration only and keep it optional.
+
+If a platform does not support a particular casting capability in the test environment, document it rather than creating a workaround that compromises the architecture.
+
+⸻
+
+FINAL REPORT
+
+Create/update:
+
+MOONIRAT_V1_PLAYER_COMPLETION_REPORT.md
+
+Include:
+
+PLAYER_STATUS:
+NEXT_PREVIOUS:
+AUTO_ADVANCE:
+FULLSCREEN:
+CHROMECAST:
+AIRPLAY:
+MOBILE_PLAYER:
+VIEW_TRACKING:
+RESUME:
+TYPECHECK:
+BUILD:
+SSR:
+REGRESSION_STATUS:
+
+Clearly distinguish:
+
+PASS
+WARN
+FAIL
+NOT_AVAILABLE
+
+Do not mark a feature PASS based only on code inspection.
+
+Only mark PASS after actual supported-environment testing.
+
+When this player completion pass is finished, STOP.
+
+Do not automatically proceed into another feature-development cycle.
+
+Moonirat should then return to controlled-beta observation and real-user validation.
