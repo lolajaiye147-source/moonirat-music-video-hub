@@ -104,11 +104,13 @@ jobs:
           find dist/server -maxdepth 2 -type f | sort | head -100
           node --input-type=module -e "import fs from 'node:fs'; const c=JSON.parse(fs.readFileSync('dist/server/wrangler.json','utf8')); if (!c.main) throw new Error('Worker main entry is missing'); if (!fs.existsSync('dist/server/'+c.main.replace(/^\\.\\//,''))) throw new Error('Worker main entry does not exist: '+c.main); if(c.name!=='moonirat-v1'||c.workers_dev!==true) throw new Error('Unexpected Worker deployment config'); console.log('Worker entry and deployment config verified:',c.main);"
 
+      - name: Install Wrangler CLI
+        if: github.event_name != 'pull_request'
+        run: npm install --global wrangler@4
+
       - name: Deploy Moonirat v1 to Cloudflare Workers
         if: github.event_name != 'pull_request'
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config artifacts/moonirat/dist/server/wrangler.json
-          wranglerVersion: "4"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler deploy --config artifacts/moonirat/dist/server/wrangler.json
