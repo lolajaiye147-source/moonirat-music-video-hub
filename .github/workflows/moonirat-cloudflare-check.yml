@@ -1,4 +1,4 @@
-name: Moonirat Cloudflare preparation
+name: Moonirat Cloudflare build and deploy
 
 on:
   push:
@@ -20,13 +20,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: moonirat-cloudflare-check-${{ github.ref }}
+  group: moonirat-cloudflare-deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  verify:
+  verify-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     env:
       VITE_SUPABASE_URL: https://pfjwulgedqvtolaazdap.supabase.co
       VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_CP5ozs7CICFszG2zbzt8Gg_4n6g6wa4
@@ -69,6 +69,20 @@ jobs:
       - name: Build Moonirat
         run: NODE_ENV=production pnpm --filter @workspace/moonirat build
 
+      - name: Configure Worker deployment name and preview URL
+        working-directory: artifacts/moonirat
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path = 'dist/server/wrangler.json';
+          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+          config.name = 'moonirat-v1';
+          config.workers_dev = true;
+          fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
+          console.log('Configured Worker:', config.name);
+          console.log('workers.dev enabled:', config.workers_dev);
+          NODE
+
       - name: Package Cloudflare deployment output
         uses: actions/upload-artifact@v4
         with:
@@ -88,4 +102,13 @@ jobs:
           cat dist/nitro.json
           echo '--- server entry and generated modules ---'
           find dist/server -maxdepth 2 -type f | sort | head -100
-          node --input-type=module -e "import fs from 'node:fs'; const c=JSON.parse(fs.readFileSync('dist/server/wrangler.json','utf8')); if (!c.main) throw new Error('Worker main entry is missing'); if (!fs.existsSync('dist/server/'+c.main.replace(/^\.\//,''))) throw new Error('Worker main entry does not exist: '+c.main); console.log('Worker main entry verified:',c.main);"
+          node --input-type=module -e "import fs from 'node:fs'; const c=JSON.parse(fs.readFileSync('dist/server/wrangler.json','utf8')); if (!c.main) throw new Error('Worker main entry is missing'); if (!fs.existsSync('dist/server/'+c.main.replace(/^\\.\\//,''))) throw new Error('Worker main entry does not exist: '+c.main); if(c.name!=='moonirat-v1'||c.workers_dev!==true) throw new Error('Unexpected Worker deployment config'); console.log('Worker entry and deployment config verified:',c.main);"
+
+      - name: Deploy Moonirat v1 to Cloudflare Workers
+        if: github.event_name != 'pull_request'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config artifacts/moonirat/dist/server/wrangler.json
+          wranglerVersion: "4"
