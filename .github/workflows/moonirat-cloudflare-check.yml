@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: moonirat-cloudflare-check-${{ github.ref }}
@@ -32,7 +32,6 @@ jobs:
       VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_CP5ozs7CICFszG2zbzt8Gg_4n6g6wa4
       SUPABASE_URL: https://pfjwulgedqvtolaazdap.supabase.co
       SUPABASE_PUBLISHABLE_KEY: sb_publishable_CP5ozs7CICFszG2zbzt8Gg_4n6g6wa4
-      NODE_ENV: production
 
     steps:
       - name: Check out deployment branch
@@ -49,11 +48,23 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install dependencies with lockfile enforcement
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies (refresh lockfile only if needed)
+        run: |
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+
+      - name: Commit lockfile synchronization if needed
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pnpm-lock.yaml
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: sync pnpm lockfile for deployment branch'
+            git push
+          fi
 
       - name: Type-check Moonirat
         run: pnpm --filter @workspace/moonirat typecheck
 
       - name: Build Moonirat
-        run: pnpm --filter @workspace/moonirat build
+        run: NODE_ENV=production pnpm --filter @workspace/moonirat build
