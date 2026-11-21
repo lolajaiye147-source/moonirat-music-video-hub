@@ -68,3 +68,14 @@ jobs:
 
       - name: Build Moonirat
         run: NODE_ENV=production pnpm --filter @workspace/moonirat build
+
+      - name: Inspect generated Cloudflare Worker bundle
+        working-directory: artifacts/moonirat
+        run: |
+          echo '--- generated wrangler config ---'
+          cat dist/server/wrangler.json
+          echo '--- Nitro deployment metadata ---'
+          cat dist/nitro.json
+          echo '--- server entry and generated modules ---'
+          find dist/server -maxdepth 2 -type f | sort | head -100
+          node --input-type=module -e "import fs from 'node:fs'; const c=JSON.parse(fs.readFileSync('dist/server/wrangler.json','utf8')); if (!c.main) throw new Error('Worker main entry is missing'); if (!fs.existsSync('dist/server/'+c.main.replace(/^\.\//,''))) throw new Error('Worker main entry does not exist: '+c.main); console.log('Worker main entry verified:',c.main);"
